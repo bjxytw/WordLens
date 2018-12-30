@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "216473099229",
+    "firebase_url": "https://word-lens.firebaseio.com",
+    "project_id": "word-lens",
+    "storage_bucket": "word-lens.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216473099229:android:f6708a2366f51632",
+        "android_client_info": {
+          "package_name": "io.github.bjxytw.wordlens"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "216473099229-aepqfhbamdstd6ll52n72pbodpdnn5ff.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCE6XMX7wmk7sUw5xvPf9e_hOEu-u5uBlE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
