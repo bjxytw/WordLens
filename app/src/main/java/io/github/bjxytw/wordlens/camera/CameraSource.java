@@ -25,6 +25,8 @@ package io.github.bjxytw.wordlens.camera;
         import java.util.List;
         import java.util.Map;
 
+        import io.github.bjxytw.wordlens.TextRecognitionProcessor;
+
 
 @SuppressLint("MissingPermission")
 public class CameraSource {
@@ -65,7 +67,7 @@ public class CameraSource {
     private final FrameProcessingRunnable processingRunnable;
 
     private final Object processorLock = new Object();
-    private VisionImageProcessor frameProcessor;
+    private TextRecognitionProcessor frameProcessor;
 
     private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
 
@@ -74,6 +76,7 @@ public class CameraSource {
         graphicOverlay = overlay;
         graphicOverlay.clear();
         processingRunnable = new FrameProcessingRunnable();
+        frameProcessor = new TextRecognitionProcessor();
 
         if (Camera.getNumberOfCameras() == 1) {
             CameraInfo cameraInfo = new CameraInfo();
@@ -392,16 +395,6 @@ public class CameraSource {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
             processingRunnable.setNextFrame(data, camera);
-        }
-    }
-
-    public void setMachineLearningFrameProcessor(VisionImageProcessor processor) {
-        synchronized (processorLock) {
-            cleanScreen();
-            if (frameProcessor != null) {
-                frameProcessor.stop();
-            }
-            frameProcessor = processor;
         }
     }
 

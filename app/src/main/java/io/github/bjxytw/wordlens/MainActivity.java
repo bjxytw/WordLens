@@ -48,8 +48,6 @@ public final class MainActivity extends AppCompatActivity {
     private void createCameraSource() {
         if (cameraSource == null)
             cameraSource = new CameraSource(this, graphicOverlay);
-
-        cameraSource.setMachineLearningFrameProcessor(new TextRecognitionProcessor());
     }
 
     private void startCameraSource() {
