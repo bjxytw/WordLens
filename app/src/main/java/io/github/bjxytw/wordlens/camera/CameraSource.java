@@ -29,16 +29,12 @@ package io.github.bjxytw.wordlens.camera;
 
 
 @SuppressLint("MissingPermission")
+@SuppressWarnings("deprecation")
 public class CameraSource {
     @SuppressLint("InlinedApi")
-    public static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
-
-    @SuppressLint("InlinedApi")
-    public static final int CAMERA_FACING_FRONT = CameraInfo.CAMERA_FACING_FRONT;
+    private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
 
     private static final String TAG = "MIDemoApp:CameraSource";
-
-    private static final int DUMMY_TEXTURE_NAME = 100;
 
     private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
 
@@ -52,15 +48,12 @@ public class CameraSource {
 
     private Size previewSize;
 
-    private final float requestedFps = 20.0f;
-    private final int requestedPreviewWidth = 480;
-    private final int requestedPreviewHeight = 360;
-    private final boolean requestedAutoFocus = true;
+    private static final float requestedFps = 20.0f;
+    private static final int requestedPreviewWidth = 480;
+    private static final int requestedPreviewHeight = 360;
+    private static final boolean requestedAutoFocus = true;
 
-    private SurfaceTexture dummySurfaceTexture;
     private final GraphicOverlay graphicOverlay;
-
-    private boolean usingSurfaceTexture;
 
     private Thread processingThread;
 
@@ -97,30 +90,9 @@ public class CameraSource {
         }
     }
 
-    @SuppressLint("MissingPermission")
     @RequiresPermission(Manifest.permission.CAMERA)
-    public synchronized CameraSource start() throws IOException {
-        if (camera != null) {
-            return this;
-        }
-
-        camera = createCamera();
-        dummySurfaceTexture = new SurfaceTexture(DUMMY_TEXTURE_NAME);
-        camera.setPreviewTexture(dummySurfaceTexture);
-        usingSurfaceTexture = true;
-        camera.startPreview();
-
-        processingThread = new Thread(processingRunnable);
-        processingRunnable.setActive(true);
-        processingThread.start();
-        return this;
-    }
-
-    @RequiresPermission(Manifest.permission.CAMERA)
-    public synchronized CameraSource start(SurfaceHolder surfaceHolder) throws IOException {
-        if (camera != null) {
-            return this;
-        }
+    public synchronized void start(SurfaceHolder surfaceHolder) throws IOException {
+        if (camera != null) return;
 
         camera = createCamera();
         camera.setPreviewDisplay(surfaceHolder);
@@ -129,9 +101,6 @@ public class CameraSource {
         processingThread = new Thread(processingRunnable);
         processingRunnable.setActive(true);
         processingThread.start();
-
-        usingSurfaceTexture = false;
-        return this;
     }
 
     public synchronized void stop() {
@@ -149,11 +118,7 @@ public class CameraSource {
             camera.stopPreview();
             camera.setPreviewCallbackWithBuffer(null);
             try {
-                if (usingSurfaceTexture) {
-                    camera.setPreviewTexture(null);
-                } else {
-                    camera.setPreviewDisplay(null);
-                }
+                camera.setPreviewDisplay(null);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to clear camera preview: " + e);
             }
@@ -162,13 +127,6 @@ public class CameraSource {
         }
 
         bytesToByteBuffer.clear();
-    }
-
-    public synchronized void setFacing(int facing) {
-        if ((facing != CAMERA_FACING_BACK) && (facing != CAMERA_FACING_FRONT)) {
-            throw new IllegalArgumentException("Invalid camera: " + facing);
-        }
-        this.facing = facing;
     }
 
     public Size getPreviewSize() {
@@ -183,28 +141,24 @@ public class CameraSource {
     @SuppressLint("InlinedApi")
     private Camera createCamera() throws IOException {
         int requestedCameraId = getIdForRequestedCamera(facing);
-        if (requestedCameraId == -1) {
+        if (requestedCameraId == -1)
             throw new IOException("Could not find requested camera.");
-        }
         Camera camera = Camera.open(requestedCameraId);
 
         SizePair sizePair = selectSizePair(camera, requestedPreviewWidth, requestedPreviewHeight);
-        if (sizePair == null) {
+        if (sizePair == null)
             throw new IOException("Could not find suitable preview size.");
-        }
         Size pictureSize = sizePair.pictureSize();
         previewSize = sizePair.previewSize();
 
         int[] previewFpsRange = selectPreviewFpsRange(camera, requestedFps);
-        if (previewFpsRange == null) {
+        if (previewFpsRange == null)
             throw new IOException("Could not find suitable preview frames per second range.");
-        }
 
         Camera.Parameters parameters = camera.getParameters();
 
-        if (pictureSize != null) {
+        if (pictureSize != null)
             parameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
-        }
         parameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
         parameters.setPreviewFpsRange(
                 previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
@@ -225,12 +179,22 @@ public class CameraSource {
 
         camera.setParameters(parameters);
 
+        // Four frame buffers are needed for working with the camera:
+        //
+        //   one for the frame that is currently being executed upon in doing detection
+        //   one for the next pending frame to process immediately upon completing detection
+        //   two for the frames that the camera uses to populate future preview images
+        //
+        // Through trial and error it appears that two free buffers, in addition to the two buffers
+        // used in this code, are needed for the camera to work properly.  Perhaps the camera has
+        // one thread for acquiring images, and another thread for calling into user code.  If only
+        // three buffers are used, then the camera will spew thousands of warning messages when
+        // detection takes a non-trivial amount of time.
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
-
         return camera;
     }
 

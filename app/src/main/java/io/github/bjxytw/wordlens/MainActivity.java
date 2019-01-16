@@ -15,7 +15,6 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.camera.CameraSourcePreview;
 import io.github.bjxytw.wordlens.camera.GraphicOverlay;
 
 public final class MainActivity extends AppCompatActivity {
@@ -33,12 +32,7 @@ public final class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         preview = findViewById(R.id.firePreview);
-        if (preview == null)
-            Log.d(TAG, "Preview is null");
-
         graphicOverlay = findViewById(R.id.fireFaceOverlay);
-        if (graphicOverlay == null)
-            Log.d(TAG, "graphicOverlay is null");
 
         if (allPermissionsGranted())
             createCameraSource();
@@ -53,10 +47,6 @@ public final class MainActivity extends AppCompatActivity {
     private void startCameraSource() {
         if (cameraSource != null) {
             try {
-                if (preview == null)
-                    Log.d(TAG, "resume: Preview is null");
-                if (graphicOverlay == null)
-                    Log.d(TAG, "resume: graphOverlay is null");
                 preview.start(cameraSource, graphicOverlay);
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
