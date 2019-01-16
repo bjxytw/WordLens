@@ -15,7 +15,7 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.camera.GraphicOverlay;
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
 public final class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -41,7 +41,7 @@ public final class MainActivity extends AppCompatActivity {
 
     private void createCameraSource() {
         if (cameraSource == null)
-            cameraSource = new CameraSource(this, graphicOverlay);
+            cameraSource = new CameraSource(graphicOverlay);
     }
 
     private void startCameraSource() {

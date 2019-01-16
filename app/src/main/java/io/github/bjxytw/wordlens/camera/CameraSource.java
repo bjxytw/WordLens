@@ -2,20 +2,16 @@ package io.github.bjxytw.wordlens.camera;
 
         import android.Manifest;
         import android.annotation.SuppressLint;
-        import android.app.Activity;
-        import android.content.Context;
         import android.graphics.ImageFormat;
-        import android.graphics.SurfaceTexture;
         import android.hardware.Camera;
         import android.hardware.Camera.CameraInfo;
         import android.support.annotation.Nullable;
         import android.support.annotation.RequiresPermission;
         import android.util.Log;
-        import android.view.Surface;
         import android.view.SurfaceHolder;
-        import android.view.WindowManager;
 
         import com.google.android.gms.common.images.Size;
+        import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 
         import java.io.IOException;
         import java.lang.Thread.State;
@@ -26,32 +22,31 @@ package io.github.bjxytw.wordlens.camera;
         import java.util.Map;
 
         import io.github.bjxytw.wordlens.TextRecognitionProcessor;
+        import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
 
 @SuppressLint("MissingPermission")
 @SuppressWarnings("deprecation")
 public class CameraSource {
     @SuppressLint("InlinedApi")
-    private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
 
-    private static final String TAG = "MIDemoApp:CameraSource";
+    public static final int ROTATION = FirebaseVisionImageMetadata.ROTATION_90;
+    public static final int ROTATION_DEGREE = 90;
+    public static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
+
+    private static final String TAG = "CameraSource";
 
     private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
 
-    protected Activity activity;
-
     private Camera camera;
-
-    protected int facing = CAMERA_FACING_BACK;
-
-    private int rotation;
 
     private Size previewSize;
 
-    private static final float requestedFps = 20.0f;
-    private static final int requestedPreviewWidth = 480;
-    private static final int requestedPreviewHeight = 360;
-    private static final boolean requestedAutoFocus = true;
+
+    private static final float REQUESTED_FPS = 20.0f;
+    private static final int REQUESTED_PREVIEW_WIDTH = 640;
+    private static final int REQUESTED_PREVIEW_HEIGHT = 480;
+    private static final boolean REQUESTED_AUTO_FOCUS = true;
 
     private final GraphicOverlay graphicOverlay;
 
@@ -64,18 +59,11 @@ public class CameraSource {
 
     private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
 
-    public CameraSource(Activity activity, GraphicOverlay overlay) {
-        this.activity = activity;
+    public CameraSource(GraphicOverlay overlay) {
         graphicOverlay = overlay;
         graphicOverlay.clear();
         processingRunnable = new FrameProcessingRunnable();
         frameProcessor = new TextRecognitionProcessor();
-
-        if (Camera.getNumberOfCameras() == 1) {
-            CameraInfo cameraInfo = new CameraInfo();
-            Camera.getCameraInfo(0, cameraInfo);
-            facing = cameraInfo.facing;
-        }
     }
 
     public void release() {
@@ -133,48 +121,48 @@ public class CameraSource {
         return previewSize;
     }
 
-    public int getCameraFacing() {
-        return facing;
-    }
-
-
     @SuppressLint("InlinedApi")
     private Camera createCamera() throws IOException {
-        int requestedCameraId = getIdForRequestedCamera(facing);
+        int requestedCameraId = getIdForRequestedCamera();
         if (requestedCameraId == -1)
             throw new IOException("Could not find requested camera.");
         Camera camera = Camera.open(requestedCameraId);
 
-        SizePair sizePair = selectSizePair(camera, requestedPreviewWidth, requestedPreviewHeight);
+        SizePair sizePair = selectSizePair(camera);
         if (sizePair == null)
             throw new IOException("Could not find suitable preview size.");
         Size pictureSize = sizePair.pictureSize();
         previewSize = sizePair.previewSize();
 
-        int[] previewFpsRange = selectPreviewFpsRange(camera, requestedFps);
+        Log.i(TAG, "Selected preview size: " + previewSize.toString());
+
+        int[] previewFpsRange = selectPreviewFpsRange(camera);
         if (previewFpsRange == null)
             throw new IOException("Could not find suitable preview frames per second range.");
+
+        int minFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
+        int maxFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
+        Log.i(TAG, "FPS Range: " + (float) minFps / 1000.0f
+                + " ~ " + (float) maxFps / 1000.0f);
 
         Camera.Parameters parameters = camera.getParameters();
 
         if (pictureSize != null)
             parameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
+
         parameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
-        parameters.setPreviewFpsRange(
-                previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-                previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+        parameters.setPreviewFpsRange(minFps, maxFps);
         parameters.setPreviewFormat(ImageFormat.NV21);
 
-        setRotation(camera, parameters, requestedCameraId);
+        camera.setDisplayOrientation(ROTATION_DEGREE);
+        parameters.setRotation(ROTATION_DEGREE);
 
-        if (requestedAutoFocus) {
-            if (parameters
-                    .getSupportedFocusModes()
-                    .contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+
+        if (REQUESTED_AUTO_FOCUS) {
+            if (parameters.getSupportedFocusModes()
+                    .contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            } else {
-                Log.i(TAG, "Camera auto focus is not supported on this device.");
-            }
+            else Log.i(TAG, "Camera auto focus is not supported on this device.");
         }
 
         camera.setParameters(parameters);
@@ -198,33 +186,14 @@ public class CameraSource {
         return camera;
     }
 
-    private static int getIdForRequestedCamera(int facing) {
+    private static int getIdForRequestedCamera() {
         CameraInfo cameraInfo = new CameraInfo();
         for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
             Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == facing) {
+            if (cameraInfo.facing == CAMERA_FACING_BACK)
                 return i;
-            }
         }
         return -1;
-    }
-
-    private static SizePair selectSizePair(Camera camera, int desiredWidth, int desiredHeight) {
-        List<SizePair> validPreviewSizes = generateValidPreviewSizeList(camera);
-
-        SizePair selectedPair = null;
-        int minDiff = Integer.MAX_VALUE;
-        for (SizePair sizePair : validPreviewSizes) {
-            Size size = sizePair.previewSize();
-            int diff =
-                    Math.abs(size.getWidth() - desiredWidth) + Math.abs(size.getHeight() - desiredHeight);
-            if (diff < minDiff) {
-                selectedPair = sizePair;
-                minDiff = diff;
-            }
-        }
-
-        return selectedPair;
     }
 
     private static class SizePair {
@@ -235,9 +204,8 @@ public class CameraSource {
                 android.hardware.Camera.Size previewSize,
                 @Nullable android.hardware.Camera.Size pictureSize) {
             preview = new Size(previewSize.width, previewSize.height);
-            if (pictureSize != null) {
+            if (pictureSize != null)
                 picture = new Size(pictureSize.width, pictureSize.height);
-            }
         }
 
         Size previewSize() {
@@ -248,6 +216,25 @@ public class CameraSource {
         Size pictureSize() {
             return picture;
         }
+    }
+
+    private static SizePair selectSizePair(Camera camera) {
+        List<SizePair> validPreviewSizes = generateValidPreviewSizeList(camera);
+
+        SizePair selectedPair = null;
+        int minDiff = Integer.MAX_VALUE;
+        for (SizePair sizePair : validPreviewSizes) {
+            Size size = sizePair.previewSize();
+            int diff =
+                    Math.abs(size.getWidth() - REQUESTED_PREVIEW_WIDTH)
+                            + Math.abs(size.getHeight() - REQUESTED_PREVIEW_HEIGHT);
+            if (diff < minDiff) {
+                selectedPair = sizePair;
+                minDiff = diff;
+            }
+        }
+
+        return selectedPair;
     }
 
     private static List<SizePair> generateValidPreviewSizeList(Camera camera) {
@@ -280,14 +267,15 @@ public class CameraSource {
     }
 
     @SuppressLint("InlinedApi")
-    private static int[] selectPreviewFpsRange(Camera camera, float desiredPreviewFps) {
+    private static int[] selectPreviewFpsRange(Camera camera) {
 
-        int desiredPreviewFpsScaled = (int) (desiredPreviewFps * 1000.0f);
+        int desiredPreviewFpsScaled = (int) (REQUESTED_FPS * 1000.0f);
 
         int[] selectedFpsRange = null;
         int minDiff = Integer.MAX_VALUE;
         List<int[]> previewFpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
         for (int[] range : previewFpsRangeList) {
+
             int deltaMin = desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
             int deltaMax = desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
             int diff = Math.abs(deltaMin) + Math.abs(deltaMax);
@@ -299,46 +287,6 @@ public class CameraSource {
         return selectedFpsRange;
     }
 
-    private void setRotation(Camera camera, Camera.Parameters parameters, int cameraId) {
-        WindowManager windowManager = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
-        int degrees = 0;
-        int rotation = windowManager.getDefaultDisplay().getRotation();
-        switch (rotation) {
-            case Surface.ROTATION_0:
-                degrees = 0;
-                break;
-            case Surface.ROTATION_90:
-                degrees = 90;
-                break;
-            case Surface.ROTATION_180:
-                degrees = 180;
-                break;
-            case Surface.ROTATION_270:
-                degrees = 270;
-                break;
-            default:
-                Log.e(TAG, "Bad rotation value: " + rotation);
-        }
-
-        CameraInfo cameraInfo = new CameraInfo();
-        Camera.getCameraInfo(cameraId, cameraInfo);
-
-        int angle;
-        int displayAngle;
-        if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            angle = (cameraInfo.orientation + degrees) % 360;
-            displayAngle = (360 - angle) % 360;
-        } else {
-            angle = (cameraInfo.orientation - degrees + 360) % 360;
-            displayAngle = angle;
-        }
-
-        this.rotation = angle / 90;
-
-        camera.setDisplayOrientation(displayAngle);
-        parameters.setRotation(angle);
-    }
-
     @SuppressLint("InlinedApi")
     private byte[] createPreviewBuffer(Size previewSize) {
         int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
@@ -347,9 +295,8 @@ public class CameraSource {
 
         byte[] byteArray = new byte[bufferSize];
         ByteBuffer buffer = ByteBuffer.wrap(byteArray);
-        if (!buffer.hasArray() || (buffer.array() != byteArray)) {
+        if (!buffer.hasArray() || (buffer.array() != byteArray))
             throw new IllegalStateException("Failed to create valid buffer for camera source.");
-        }
 
         bytesToByteBuffer.put(byteArray, buffer);
         return byteArray;
@@ -400,7 +347,6 @@ public class CameraSource {
 
                 pendingFrameData = bytesToByteBuffer.get(data);
 
-                // Notify the processor thread if it is waiting on the next frame (see below).
                 lock.notifyAll();
             }
         }
@@ -436,12 +382,7 @@ public class CameraSource {
                         Log.d(TAG, "Process an image");
                         frameProcessor.process(
                                 data,
-                                new FrameMetadata.Builder()
-                                        .setWidth(previewSize.getWidth())
-                                        .setHeight(previewSize.getHeight())
-                                        .setRotation(rotation)
-                                        .setCameraFacing(facing)
-                                        .build(),
+                                previewSize,
                                 graphicOverlay);
                     }
                 } catch (Throwable t) {

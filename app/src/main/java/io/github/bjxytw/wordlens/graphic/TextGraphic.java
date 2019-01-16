@@ -1,4 +1,4 @@
-package io.github.bjxytw.wordlens;
+package io.github.bjxytw.wordlens.graphic;
 
 
 import android.graphics.Canvas;
@@ -7,8 +7,8 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
-import io.github.bjxytw.wordlens.camera.GraphicOverlay;
-import io.github.bjxytw.wordlens.camera.GraphicOverlay.Graphic;
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay.Graphic;
 
 /**
  * Graphic instance for rendering TextBlock position, size, and ID within an associated graphic
@@ -24,7 +24,7 @@ public class TextGraphic extends Graphic {
     private final Paint textPaint;
     private final FirebaseVisionText.Element text;
 
-    TextGraphic(GraphicOverlay overlay, FirebaseVisionText.Element text) {
+    public TextGraphic(GraphicOverlay overlay, FirebaseVisionText.Element text) {
         super(overlay);
 
         this.text = text;

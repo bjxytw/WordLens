@@ -13,15 +13,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true">
+        android:layout_alignParentTop="true" />
 
-        <io.github.bjxytw.wordlens.camera.GraphicOverlay
-            android:id="@+id/fireFaceOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentBottom="true"/>
-    </io.github.bjxytw.wordlens.CameraSourcePreview>
+    <io.github.bjxytw.wordlens.graphic.GraphicOverlay
+        android:id="@+id/fireFaceOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

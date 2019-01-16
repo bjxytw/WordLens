@@ -1,9 +1,11 @@
-package io.github.bjxytw.wordlens.camera;
+package io.github.bjxytw.wordlens.graphic;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import io.github.bjxytw.wordlens.camera.GraphicOverlay.Graphic;
+
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay.Graphic;
 
 /** Draw camera image to background. */
 public class CameraImageGraphic extends Graphic {

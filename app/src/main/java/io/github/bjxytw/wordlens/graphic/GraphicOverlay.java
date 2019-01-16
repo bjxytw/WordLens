@@ -1,4 +1,4 @@
-package io.github.bjxytw.wordlens.camera;
+package io.github.bjxytw.wordlens.graphic;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -27,7 +27,7 @@ public class GraphicOverlay extends View {
     public abstract static class Graphic {
         private GraphicOverlay overlay;
 
-        public Graphic(GraphicOverlay overlay) {
+        Graphic(GraphicOverlay overlay) {
             this.overlay = overlay;
         }
 
@@ -49,24 +49,19 @@ public class GraphicOverlay extends View {
         /**
          * Adjusts a horizontal value of the supplied value from the preview scale to the view scale.
          */
-        public float scaleX(float horizontal) {
+        float scaleX(float horizontal) {
             return horizontal * overlay.widthScaleFactor;
         }
 
         /** Adjusts a vertical value of the supplied value from the preview scale to the view scale. */
-        public float scaleY(float vertical) {
+        float scaleY(float vertical) {
             return vertical * overlay.heightScaleFactor;
-        }
-
-        /** Returns the application context of the app. */
-        public Context getApplicationContext() {
-            return overlay.getContext().getApplicationContext();
         }
 
         /**
          * Adjusts the x coordinate from the preview's coordinate system to the view coordinate system.
          */
-        public float translateX(float x) {
+        float translateX(float x) {
             if (overlay.facing == CameraSource.CAMERA_FACING_FRONT) {
                 return overlay.getWidth() - scaleX(x);
             } else {
@@ -77,13 +72,10 @@ public class GraphicOverlay extends View {
         /**
          * Adjusts the y coordinate from the preview's coordinate system to the view coordinate system.
          */
-        public float translateY(float y) {
+        float translateY(float y) {
             return scaleY(y);
         }
 
-        public void postInvalidate() {
-            overlay.postInvalidate();
-        }
     }
 
     public GraphicOverlay(Context context, AttributeSet attrs) {
@@ -103,14 +95,6 @@ public class GraphicOverlay extends View {
         synchronized (lock) {
             graphics.add(graphic);
         }
-    }
-
-    /** Removes a graphic from the overlay. */
-    public void remove(Graphic graphic) {
-        synchronized (lock) {
-            graphics.remove(graphic);
-        }
-        postInvalidate();
     }
 
     /**
@@ -133,8 +117,8 @@ public class GraphicOverlay extends View {
 
         synchronized (lock) {
             if ((previewWidth != 0) && (previewHeight != 0)) {
-                widthScaleFactor = (float) canvas.getWidth() / (float) previewWidth;
-                heightScaleFactor = (float) canvas.getHeight() / (float) previewHeight;
+                widthScaleFactor = (float) getWidth() / (float) previewWidth;
+                heightScaleFactor = (float) getHeight() / (float) previewHeight;
             }
 
             for (Graphic graphic : graphics) {
