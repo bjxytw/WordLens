@@ -14,7 +14,6 @@ import java.io.IOException;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
-/** Preview the camera image in the screen. */
 public class CameraSourcePreview extends SurfaceView {
     private static final String TAG = "CameraPreview";
 
@@ -30,22 +29,17 @@ public class CameraSourcePreview extends SurfaceView {
         getHolder().addCallback(new SurfaceCallback());
     }
 
-    public void start(CameraSource cameraSource) throws IOException {
-        if (cameraSource == null) {
+    public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
+        if (cameraSource == null)
             stop();
-        }
 
         this.cameraSource = cameraSource;
+        this.overlay = overlay;
 
         if (this.cameraSource != null) {
             startRequested = true;
             startIfReady();
         }
-    }
-
-    public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
-        this.overlay = overlay;
-        start(cameraSource);
     }
 
     @SuppressLint("MissingPermission")
@@ -54,7 +48,7 @@ public class CameraSourcePreview extends SurfaceView {
             cameraSource.start(getHolder());
             if (overlay != null) {
                 Size size = cameraSource.getPreviewSize();
-                overlay.setCameraInfo(size.getHeight(), size.getWidth(), CameraSource.CAMERA_FACING_BACK);
+                overlay.setCameraInfo(size.getHeight(), size.getWidth());
                 overlay.clear();
             }
             startRequested = false;
@@ -62,9 +56,8 @@ public class CameraSourcePreview extends SurfaceView {
     }
 
     public void stop() {
-        if (cameraSource != null) {
+        if (cameraSource != null)
             cameraSource.stop();
-        }
     }
 
     private class SurfaceCallback implements SurfaceHolder.Callback {

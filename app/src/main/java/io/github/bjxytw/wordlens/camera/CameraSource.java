@@ -1,61 +1,57 @@
 package io.github.bjxytw.wordlens.camera;
 
-        import android.Manifest;
-        import android.annotation.SuppressLint;
-        import android.graphics.ImageFormat;
-        import android.hardware.Camera;
-        import android.hardware.Camera.CameraInfo;
-        import android.support.annotation.Nullable;
-        import android.support.annotation.RequiresPermission;
-        import android.util.Log;
-        import android.view.SurfaceHolder;
 
-        import com.google.android.gms.common.images.Size;
-        import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.graphics.ImageFormat;
+import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresPermission;
+import android.util.Log;
+import android.view.SurfaceHolder;
 
-        import java.io.IOException;
-        import java.lang.Thread.State;
-        import java.nio.ByteBuffer;
-        import java.util.ArrayList;
-        import java.util.IdentityHashMap;
-        import java.util.List;
-        import java.util.Map;
+import com.google.android.gms.common.images.Size;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 
-        import io.github.bjxytw.wordlens.TextRecognitionProcessor;
-        import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+import java.io.IOException;
+import java.lang.Thread.State;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
+import io.github.bjxytw.wordlens.TextRecognitionProcessor;
+import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
 @SuppressLint("MissingPermission")
 @SuppressWarnings("deprecation")
 public class CameraSource {
     @SuppressLint("InlinedApi")
 
-    public static final int ROTATION = FirebaseVisionImageMetadata.ROTATION_90;
     public static final int ROTATION_DEGREE = 90;
-    public static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
 
-    private static final String TAG = "CameraSource";
-
-    private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
-
-    private Camera camera;
-
-    private Size previewSize;
-
-
+    private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
     private static final float REQUESTED_FPS = 20.0f;
     private static final int REQUESTED_PREVIEW_WIDTH = 640;
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
     private static final boolean REQUESTED_AUTO_FOCUS = true;
 
+    private static final String TAG = "CameraSource";
+
+    private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
+
     private final GraphicOverlay graphicOverlay;
 
-    private Thread processingThread;
-
     private final FrameProcessingRunnable processingRunnable;
-
     private final Object processorLock = new Object();
+
+    private Thread processingThread;
     private TextRecognitionProcessor frameProcessor;
+
+    private Camera camera;
+    private Size previewSize;
 
     private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
 
@@ -72,9 +68,8 @@ public class CameraSource {
             processingRunnable.release();
             cleanScreen();
 
-            if (frameProcessor != null) {
+            if (frameProcessor != null)
                 frameProcessor.stop();
-            }
         }
     }
 
@@ -117,10 +112,6 @@ public class CameraSource {
         bytesToByteBuffer.clear();
     }
 
-    public Size getPreviewSize() {
-        return previewSize;
-    }
-
     @SuppressLint("InlinedApi")
     private Camera createCamera() throws IOException {
         int requestedCameraId = getIdForRequestedCamera();
@@ -154,9 +145,8 @@ public class CameraSource {
         parameters.setPreviewFpsRange(minFps, maxFps);
         parameters.setPreviewFormat(ImageFormat.NV21);
 
-        camera.setDisplayOrientation(ROTATION_DEGREE);
         parameters.setRotation(ROTATION_DEGREE);
-
+        camera.setDisplayOrientation(ROTATION_DEGREE);
 
         if (REQUESTED_AUTO_FOCUS) {
             if (parameters.getSupportedFocusModes()
@@ -167,17 +157,7 @@ public class CameraSource {
 
         camera.setParameters(parameters);
 
-        // Four frame buffers are needed for working with the camera:
-        //
-        //   one for the frame that is currently being executed upon in doing detection
-        //   one for the next pending frame to process immediately upon completing detection
-        //   two for the frames that the camera uses to populate future preview images
-        //
-        // Through trial and error it appears that two free buffers, in addition to the two buffers
-        // used in this code, are needed for the camera to work properly.  Perhaps the camera has
-        // one thread for acquiring images, and another thread for calling into user code.  If only
-        // three buffers are used, then the camera will spew thousands of warning messages when
-        // detection takes a non-trivial amount of time.
+        // Four frame buffers are needed for working with the camera.
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
@@ -195,6 +175,117 @@ public class CameraSource {
         }
         return -1;
     }
+
+    private void cleanScreen() {
+        graphicOverlay.clear();
+    }
+
+    public Size getPreviewSize() {
+        return previewSize;
+    }
+
+    @SuppressLint("InlinedApi")
+    private byte[] createPreviewBuffer(Size previewSize) {
+        int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
+        long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
+        int bufferSize = (int) Math.ceil(sizeInBits / 8.0d) + 1;
+
+        byte[] byteArray = new byte[bufferSize];
+        ByteBuffer buffer = ByteBuffer.wrap(byteArray);
+        if (!buffer.hasArray() || (buffer.array() != byteArray))
+            throw new IllegalStateException("Failed to create valid buffer for camera source.");
+
+        bytesToByteBuffer.put(byteArray, buffer);
+        return byteArray;
+    }
+
+    private class CameraPreviewCallback implements Camera.PreviewCallback {
+        @Override
+        public void onPreviewFrame(byte[] data, Camera camera) {
+            processingRunnable.setNextFrame(data, camera);
+        }
+    }
+
+    private class FrameProcessingRunnable implements Runnable {
+
+        private final Object lock = new Object();
+        private boolean active = true;
+
+        private ByteBuffer pendingFrameData;
+
+        FrameProcessingRunnable() {}
+
+        @SuppressLint("Assert")
+        void release() {
+            assert (processingThread.getState() == State.TERMINATED);
+        }
+
+        void setActive(boolean active) {
+            synchronized (lock) {
+                this.active = active;
+                lock.notifyAll();
+            }
+        }
+
+        void setNextFrame(byte[] data, Camera camera) {
+            synchronized (lock) {
+                if (pendingFrameData != null) {
+                    camera.addCallbackBuffer(pendingFrameData.array());
+                    pendingFrameData = null;
+                }
+
+                if (!bytesToByteBuffer.containsKey(data)) {
+                    Log.d(TAG, "Skipping frame. Could not find ByteBuffer associated "
+                                    + "with the image data from the camera.");
+                    return;
+                }
+
+                pendingFrameData = bytesToByteBuffer.get(data);
+
+                lock.notifyAll();
+            }
+        }
+
+        @SuppressLint("InlinedApi")
+        @SuppressWarnings("GuardedBy")
+        @Override
+        public void run() {
+            ByteBuffer data;
+
+            while (true) {
+                synchronized (lock) {
+                    while (active && (pendingFrameData == null)) {
+                        try {
+                            lock.wait();
+                        } catch (InterruptedException e) {
+                            Log.d(TAG, "Frame processing loop terminated.", e);
+                            return;
+                        }
+                    }
+
+                    if (!active) return;
+
+                    data = pendingFrameData;
+                    pendingFrameData = null;
+                }
+
+                try {
+                    synchronized (processorLock) {
+                        Log.d(TAG, "Process an image");
+                        frameProcessor.process(
+                                data,
+                                previewSize,
+                                graphicOverlay);
+                    }
+                } catch (Throwable t) {
+                    Log.e(TAG, "Exception thrown from receiver.", t);
+                } finally {
+                    camera.addCallbackBuffer(data.array());
+                }
+            }
+        }
+    }
+
 
     private static class SizePair {
         private final Size preview;
@@ -287,114 +378,4 @@ public class CameraSource {
         return selectedFpsRange;
     }
 
-    @SuppressLint("InlinedApi")
-    private byte[] createPreviewBuffer(Size previewSize) {
-        int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
-        long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
-        int bufferSize = (int) Math.ceil(sizeInBits / 8.0d) + 1;
-
-        byte[] byteArray = new byte[bufferSize];
-        ByteBuffer buffer = ByteBuffer.wrap(byteArray);
-        if (!buffer.hasArray() || (buffer.array() != byteArray))
-            throw new IllegalStateException("Failed to create valid buffer for camera source.");
-
-        bytesToByteBuffer.put(byteArray, buffer);
-        return byteArray;
-    }
-
-    private class CameraPreviewCallback implements Camera.PreviewCallback {
-        @Override
-        public void onPreviewFrame(byte[] data, Camera camera) {
-            processingRunnable.setNextFrame(data, camera);
-        }
-    }
-
-    private class FrameProcessingRunnable implements Runnable {
-
-        private final Object lock = new Object();
-        private boolean active = true;
-
-        private ByteBuffer pendingFrameData;
-
-        FrameProcessingRunnable() {}
-
-        @SuppressLint("Assert")
-        void release() {
-            assert (processingThread.getState() == State.TERMINATED);
-        }
-
-        void setActive(boolean active) {
-            synchronized (lock) {
-                this.active = active;
-                lock.notifyAll();
-            }
-        }
-
-        void setNextFrame(byte[] data, Camera camera) {
-            synchronized (lock) {
-                if (pendingFrameData != null) {
-                    camera.addCallbackBuffer(pendingFrameData.array());
-                    pendingFrameData = null;
-                }
-
-                if (!bytesToByteBuffer.containsKey(data)) {
-                    Log.d(
-                            TAG,
-                            "Skipping frame. Could not find ByteBuffer associated with the image "
-                                    + "data from the camera.");
-                    return;
-                }
-
-                pendingFrameData = bytesToByteBuffer.get(data);
-
-                lock.notifyAll();
-            }
-        }
-
-        @SuppressLint("InlinedApi")
-        @SuppressWarnings("GuardedBy")
-        @Override
-        public void run() {
-            ByteBuffer data;
-
-            while (true) {
-                synchronized (lock) {
-                    while (active && (pendingFrameData == null)) {
-                        try {
-                            lock.wait();
-                        } catch (InterruptedException e) {
-                            Log.d(TAG, "Frame processing loop terminated.", e);
-                            return;
-                        }
-                    }
-
-                    if (!active) {
-                        return;
-                    }
-
-                    data = pendingFrameData;
-                    pendingFrameData = null;
-                }
-
-
-                try {
-                    synchronized (processorLock) {
-                        Log.d(TAG, "Process an image");
-                        frameProcessor.process(
-                                data,
-                                previewSize,
-                                graphicOverlay);
-                    }
-                } catch (Throwable t) {
-                    Log.e(TAG, "Exception thrown from receiver.", t);
-                } finally {
-                    camera.addCallbackBuffer(data.array());
-                }
-            }
-        }
-    }
-
-    private void cleanScreen() {
-        graphicOverlay.clear();
-    }
 }
