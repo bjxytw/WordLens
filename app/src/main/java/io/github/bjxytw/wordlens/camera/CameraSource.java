@@ -30,6 +30,7 @@ import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 public class CameraSource {
     @SuppressLint("InlinedApi")
 
+    public static final int ROTATION = FirebaseVisionImageMetadata.ROTATION_90;
     public static final int ROTATION_DEGREE = 90;
 
     private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
