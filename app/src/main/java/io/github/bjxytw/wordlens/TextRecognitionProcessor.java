@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+/**
+ * Processor for the text recognition.
+ */
 public class TextRecognitionProcessor {
 
     private static final String TAG = "TextRec";
@@ -38,43 +41,62 @@ public class TextRecognitionProcessor {
     private final FirebaseVisionTextRecognizer detector;
 
     @GuardedBy("this")
-    private Bitmap latestImage;
-
+    private ByteBuffer latestImage;
 
     @GuardedBy("this")
-    private Bitmap processingImage;
+    private Size latestImageSize;
 
+    @GuardedBy("this")
+    private ByteBuffer processingImage;
+
+    @GuardedBy("this")
+    private Size processingImageSize;
 
     public TextRecognitionProcessor() {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
 
     }
 
-    public synchronized void process(ByteBuffer data, Size size, final GraphicOverlay graphicOverlay) {
-        latestImage = getBitmap(data, size);
-        if (processingImage == null)
+    public synchronized void process(
+            ByteBuffer data, final Size frameSize, final GraphicOverlay
+            graphicOverlay) {
+        latestImage = data;
+        latestImageSize = frameSize;
+        if (processingImage == null && processingImageSize == null) {
             processLatestImage(graphicOverlay);
+        }
     }
 
     private synchronized void processLatestImage(final GraphicOverlay graphicOverlay) {
         processingImage = latestImage;
+        processingImageSize = latestImageSize;
         latestImage = null;
-        if (processingImage != null)
-            processImage(processingImage, graphicOverlay);
+        latestImageSize = null;
+        if (processingImage != null && processingImageSize != null) {
+            processImage(processingImage, processingImageSize, graphicOverlay);
+        }
     }
 
     private void processImage(
-            Bitmap data, final GraphicOverlay graphicOverlay) {
-        detectInVisionImage(data, graphicOverlay);
+            ByteBuffer data, final Size frameSize,
+            final GraphicOverlay graphicOverlay) {
+        FirebaseVisionImageMetadata metadata =
+                new FirebaseVisionImageMetadata.Builder()
+                        .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
+                        .setWidth(frameSize.getWidth())
+                        .setHeight(frameSize.getHeight())
+                        .setRotation(CameraSource.ROTATION)
+                        .build();
+
+        Bitmap bitmap = getBitmap(data, frameSize);
+        detectInVisionImage(
+                bitmap, FirebaseVisionImage.fromByteBuffer(data, metadata), graphicOverlay);
     }
 
     private void detectInVisionImage(
             final Bitmap originalCameraImage,
+            FirebaseVisionImage image,
             final GraphicOverlay graphicOverlay) {
-
-        FirebaseVisionImage image =
-                FirebaseVisionImage.fromBitmap(originalCameraImage);
-
         Task<FirebaseVisionText> detectInImage = detector.processImage(image);
         detectInImage.addOnSuccessListener(
                 new OnSuccessListener<FirebaseVisionText>() {
@@ -82,10 +104,11 @@ public class TextRecognitionProcessor {
                     public void onSuccess(FirebaseVisionText results) {
                         graphicOverlay.clear();
 
-                        CameraImageGraphic imageGraphic =
-                                new CameraImageGraphic(graphicOverlay, originalCameraImage);
-                        graphicOverlay.add(imageGraphic);
-
+                        if (originalCameraImage != null) {
+                            CameraImageGraphic imageGraphic =
+                                    new CameraImageGraphic(graphicOverlay, originalCameraImage);
+                            graphicOverlay.add(imageGraphic);
+                        }
 
                         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
                         for (int i = 0; i < blocks.size(); i++) {
@@ -93,8 +116,8 @@ public class TextRecognitionProcessor {
                             for (int j = 0; j < lines.size(); j++) {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
-                                    GraphicOverlay.Graphic textGraphic
-                                            = new TextGraphic(graphicOverlay,elements.get(k));
+                                    GraphicOverlay.Graphic textGraphic = new TextGraphic(graphicOverlay,
+                                            elements.get(k));
                                     graphicOverlay.add(textGraphic);
                                 }
                             }
