@@ -104,11 +104,7 @@ public class TextRecognitionProcessor {
                     public void onSuccess(FirebaseVisionText results) {
                         graphicOverlay.clear();
 
-                        if (originalCameraImage != null) {
-                            CameraImageGraphic imageGraphic =
-                                    new CameraImageGraphic(graphicOverlay, originalCameraImage);
-                            graphicOverlay.add(imageGraphic);
-                        }
+
 
                         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
                         for (int i = 0; i < blocks.size(); i++) {

@@ -5,7 +5,7 @@ import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.common.images.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +17,8 @@ public class GraphicOverlay extends View {
     private int previewHeight;
     private float heightScaleFactor = 1.0f;
     private final List<Graphic> graphics = new ArrayList<>();
+    private int viewWidth;
+    private int viewHeight;
 
     public abstract static class Graphic {
         private GraphicOverlay overlay;
@@ -25,9 +27,6 @@ public class GraphicOverlay extends View {
             this.overlay = overlay;
         }
 
-        /**
-         * @param canvas drawing canvas
-         */
         public abstract void draw(Canvas canvas);
 
         float scaleX(float horizontal) {
@@ -65,10 +64,13 @@ public class GraphicOverlay extends View {
         }
     }
 
-    public void setCameraInfo(int previewWidth, int previewHeight) {
+    public void setSizeInfo(Size previewSize, Size viewSize) {
         synchronized (lock) {
-            this.previewWidth = previewWidth;
-            this.previewHeight = previewHeight;
+            this.previewWidth = previewSize.getWidth();
+            this.previewHeight = previewSize.getHeight();
+            this.viewWidth = viewSize.getWidth();
+            this.viewHeight = viewSize.getHeight();
+            requestLayout();
         }
         postInvalidate();
     }
@@ -88,5 +90,10 @@ public class GraphicOverlay extends View {
             }
         }
     }
-}
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        setMeasuredDimension(viewWidth, viewHeight);
+    }
+}

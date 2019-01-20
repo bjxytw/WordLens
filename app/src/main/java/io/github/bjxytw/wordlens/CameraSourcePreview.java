@@ -46,9 +46,11 @@ public class CameraSourcePreview extends SurfaceView {
     private void startIfReady() throws IOException {
         if (startRequested && surfaceAvailable) {
             cameraSource.start(getHolder());
+            requestLayout();
             if (overlay != null) {
                 Size size = cameraSource.getPreviewSize();
-                overlay.setCameraInfo(size.getHeight(), size.getWidth());
+                Size swappedSize = new Size(size.getHeight(), size.getWidth());
+                overlay.setSizeInfo(swappedSize, new Size(getWidth(), getHeight()));
                 overlay.clear();
             }
             startRequested = false;
@@ -58,6 +60,25 @@ public class CameraSourcePreview extends SurfaceView {
     public void stop() {
         if (cameraSource != null)
             cameraSource.stop();
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (cameraSource != null) {
+            Size size = cameraSource.getPreviewSize();
+            if (size != null) {
+                int width = MeasureSpec.getSize(widthMeasureSpec);
+                int height = MeasureSpec.getSize(heightMeasureSpec);
+                int previewWidth = size.getHeight();
+                int previewHeight = size.getWidth();
+
+                if (width < height * previewWidth / previewHeight)
+                    height = width * previewHeight / previewWidth;
+
+                setMeasuredDimension(width, height);
+            }
+        }
     }
 
     private class SurfaceCallback implements SurfaceHolder.Callback {

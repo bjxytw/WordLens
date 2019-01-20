@@ -6,7 +6,6 @@ import android.annotation.SuppressLint;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
-import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -40,8 +39,6 @@ public class CameraSource {
     private static final boolean REQUESTED_AUTO_FOCUS = true;
 
     private static final String TAG = "CameraSource";
-
-    private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
 
     private final GraphicOverlay graphicOverlay;
 
@@ -120,11 +117,10 @@ public class CameraSource {
             throw new IOException("Could not find requested camera.");
         Camera camera = Camera.open(requestedCameraId);
 
-        SizePair sizePair = selectSizePair(camera);
-        if (sizePair == null)
+        Size size = selectPreviewSize(camera);
+        if (size == null)
             throw new IOException("Could not find suitable preview size.");
-        Size pictureSize = sizePair.pictureSize();
-        previewSize = sizePair.previewSize();
+        previewSize = size;
 
         Log.i(TAG, "Selected preview size: " + previewSize.toString());
 
@@ -138,9 +134,6 @@ public class CameraSource {
                 + " ~ " + (float) maxFps / 1000.0f);
 
         Camera.Parameters parameters = camera.getParameters();
-
-        if (pictureSize != null)
-            parameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
 
         parameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
         parameters.setPreviewFpsRange(minFps, maxFps);
@@ -287,73 +280,31 @@ public class CameraSource {
         }
     }
 
+    private static Size selectPreviewSize(Camera camera) {
+        List<Size> validPreviewSizes = generateValidPreviewSizeList(camera);
 
-    private static class SizePair {
-        private final Size preview;
-        private Size picture;
-
-        SizePair(
-                android.hardware.Camera.Size previewSize,
-                @Nullable android.hardware.Camera.Size pictureSize) {
-            preview = new Size(previewSize.width, previewSize.height);
-            if (pictureSize != null)
-                picture = new Size(pictureSize.width, pictureSize.height);
-        }
-
-        Size previewSize() {
-            return preview;
-        }
-
-        @Nullable
-        Size pictureSize() {
-            return picture;
-        }
-    }
-
-    private static SizePair selectSizePair(Camera camera) {
-        List<SizePair> validPreviewSizes = generateValidPreviewSizeList(camera);
-
-        SizePair selectedPair = null;
+        Size selectedPreviewSize = null;
         int minDiff = Integer.MAX_VALUE;
-        for (SizePair sizePair : validPreviewSizes) {
-            Size size = sizePair.previewSize();
+        for (Size previewSize : validPreviewSizes) {
             int diff =
-                    Math.abs(size.getWidth() - REQUESTED_PREVIEW_WIDTH)
-                            + Math.abs(size.getHeight() - REQUESTED_PREVIEW_HEIGHT);
+                    Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
+                            + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
             if (diff < minDiff) {
-                selectedPair = sizePair;
+                selectedPreviewSize = previewSize;
                 minDiff = diff;
             }
         }
 
-        return selectedPair;
+        return selectedPreviewSize;
     }
 
-    private static List<SizePair> generateValidPreviewSizeList(Camera camera) {
+    private static List<Size> generateValidPreviewSizeList(Camera camera) {
         Camera.Parameters parameters = camera.getParameters();
         List<Camera.Size> supportedPreviewSizes =
                 parameters.getSupportedPreviewSizes();
-        List<Camera.Size> supportedPictureSizes =
-                parameters.getSupportedPictureSizes();
-        List<SizePair> validPreviewSizes = new ArrayList<>();
-        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes) {
-            float previewAspectRatio = (float) previewSize.width / (float) previewSize.height;
-
-            for (android.hardware.Camera.Size pictureSize : supportedPictureSizes) {
-                float pictureAspectRatio = (float) pictureSize.width / (float) pictureSize.height;
-                if (Math.abs(previewAspectRatio - pictureAspectRatio) < ASPECT_RATIO_TOLERANCE) {
-                    validPreviewSizes.add(new SizePair(previewSize, pictureSize));
-                    break;
-                }
-            }
-        }
-
-        if (validPreviewSizes.size() == 0) {
-            Log.w(TAG, "No preview sizes have a corresponding same-aspect-ratio picture size");
-            for (android.hardware.Camera.Size previewSize : supportedPreviewSizes) {
-                validPreviewSizes.add(new SizePair(previewSize, null));
-            }
-        }
+        List<Size> validPreviewSizes = new ArrayList<>();
+        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes)
+            validPreviewSizes.add(new Size(previewSize.width, previewSize.height));
 
         return validPreviewSizes;
     }
