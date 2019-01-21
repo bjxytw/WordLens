@@ -4,6 +4,7 @@ package io.github.bjxytw.wordlens.camera;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.support.annotation.RequiresPermission;
@@ -36,22 +37,23 @@ public class CameraSource {
     private static final float REQUESTED_FPS = 20.0f;
     private static final int REQUESTED_PREVIEW_WIDTH = 640;
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
-    private static final boolean REQUESTED_AUTO_FOCUS = true;
+    private static final int FOCUS_AREA_SIZE = 100;
 
     private static final String TAG = "CameraSource";
 
     private final GraphicOverlay graphicOverlay;
+
+    private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
 
     private final FrameProcessingRunnable processingRunnable;
     private final Object processorLock = new Object();
 
     private Thread processingThread;
     private TextRecognitionProcessor frameProcessor;
-
     private Camera camera;
     private Size previewSize;
 
-    private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
+    private boolean supportedAutoFocus;
 
     public CameraSource(GraphicOverlay overlay) {
         graphicOverlay = overlay;
@@ -78,6 +80,7 @@ public class CameraSource {
         camera = createCamera();
         camera.setPreviewDisplay(surfaceHolder);
         camera.startPreview();
+        setCameraFocus();
 
         processingThread = new Thread(processingRunnable);
         processingRunnable.setActive(true);
@@ -142,11 +145,13 @@ public class CameraSource {
         parameters.setRotation(ROTATION_DEGREE);
         camera.setDisplayOrientation(ROTATION_DEGREE);
 
-        if (REQUESTED_AUTO_FOCUS) {
-            if (parameters.getSupportedFocusModes()
-                    .contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
-                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            else Log.i(TAG, "Camera auto focus is not supported on this device.");
+        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_MACRO)
+                && parameters.getMaxNumFocusAreas() > 0) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+            supportedAutoFocus = true;
+        } else {
+            supportedAutoFocus = false;
+            Log.i(TAG, "Camera auto focus is not supported on this device.");
         }
 
         camera.setParameters(parameters);
@@ -157,7 +162,31 @@ public class CameraSource {
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
         camera.addCallbackBuffer(createPreviewBuffer(previewSize));
+
         return camera;
+    }
+
+    public void setCameraFocus() {
+        if (supportedAutoFocus) {
+            Camera.Parameters parameters = camera.getParameters();
+            int x = previewSize.getWidth() / 2;
+            int y = previewSize.getHeight() / 2;
+
+            int areaRadius = FOCUS_AREA_SIZE / 2;
+            List<Camera.Area> focusArea = new ArrayList<>();
+            focusArea.add(new Camera.Area(new Rect(
+                    x - areaRadius, y - areaRadius,
+                    x + areaRadius, y + areaRadius), 1));
+            parameters.setFocusAreas(focusArea);
+
+            camera.setParameters(parameters);
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    Log.d(TAG, "onAutoFocus: " + success);
+                }
+            });
+        }
     }
 
     private static int getIdForRequestedCamera() {

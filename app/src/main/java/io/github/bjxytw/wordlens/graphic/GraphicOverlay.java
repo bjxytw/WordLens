@@ -64,15 +64,19 @@ public class GraphicOverlay extends View {
         }
     }
 
-    public void setSizeInfo(Size previewSize, Size viewSize) {
+    public void setCameraSize(Size previewSize) {
         synchronized (lock) {
             this.previewWidth = previewSize.getWidth();
             this.previewHeight = previewSize.getHeight();
-            this.viewWidth = viewSize.getWidth();
-            this.viewHeight = viewSize.getHeight();
+        }
+    }
+
+    public void setViewSize(int width, int height) {
+        synchronized (lock) {
+            viewWidth = width;
+            viewHeight = height;
             requestLayout();
         }
-        postInvalidate();
     }
 
     @Override
@@ -94,6 +98,7 @@ public class GraphicOverlay extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        setMeasuredDimension(viewWidth, viewHeight);
+        if (viewWidth > 0 && viewHeight > 0)
+            setMeasuredDimension(viewWidth, viewHeight);
     }
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -50,7 +51,7 @@ public class CameraSourcePreview extends SurfaceView {
             if (overlay != null) {
                 Size size = cameraSource.getPreviewSize();
                 Size swappedSize = new Size(size.getHeight(), size.getWidth());
-                overlay.setSizeInfo(swappedSize, new Size(getWidth(), getHeight()));
+                overlay.setCameraSize(swappedSize);
                 overlay.clear();
             }
             startRequested = false;
@@ -60,6 +61,15 @@ public class CameraSourcePreview extends SurfaceView {
     public void stop() {
         if (cameraSource != null)
             cameraSource.stop();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
+        if (cameraSource != null)
+            cameraSource.setCameraFocus();
+        return true;
     }
 
     @Override
@@ -73,10 +83,14 @@ public class CameraSourcePreview extends SurfaceView {
                 int previewWidth = size.getHeight();
                 int previewHeight = size.getWidth();
 
-                if (width < height * previewWidth / previewHeight)
+                if (width < height * previewWidth / previewHeight) {
                     height = width * previewHeight / previewWidth;
-
-                setMeasuredDimension(width, height);
+                    setMeasuredDimension(width, height);
+                    if (overlay != null) {
+                        overlay.setViewSize(width, height);
+                        overlay.clear();
+                    }
+                }
             }
         }
     }
