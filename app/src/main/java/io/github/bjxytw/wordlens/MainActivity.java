@@ -8,6 +8,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public final class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int PERMISSION_REQUESTS = 1;
     private CameraSource cameraSource = null;
+    private TextRecognitionProcessor frameProcessor;
     private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
 
@@ -31,8 +33,11 @@ public final class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        preview = findViewById(R.id.firePreview);
-        graphicOverlay = findViewById(R.id.fireFaceOverlay);
+        preview = findViewById(R.id.cameraPreview);
+        graphicOverlay = findViewById(R.id.graphicOverlay);
+
+        TextView resultText = findViewById(R.id.resultText);
+        frameProcessor = new TextRecognitionProcessor(graphicOverlay, resultText);
 
         if (allPermissionsGranted())
             createCameraSource();
@@ -41,7 +46,7 @@ public final class MainActivity extends AppCompatActivity {
 
     private void createCameraSource() {
         if (cameraSource == null)
-            cameraSource = new CameraSource(graphicOverlay);
+            cameraSource = new CameraSource(graphicOverlay, frameProcessor);
     }
 
     private void startCameraSource() {

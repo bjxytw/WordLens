@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/fireTopLayout"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,17 +8,35 @@
     android:keepScreenOn="true">
 
     <io.github.bjxytw.wordlens.CameraSourcePreview
-        android:id="@+id/firePreview"
+        android:id="@+id/cameraPreview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true" />
+        android:layout_height="wrap_content" />
 
     <io.github.bjxytw.wordlens.graphic.GraphicOverlay
-        android:id="@+id/fireFaceOverlay"
+        android:id="@+id/graphicOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true" />
+        android:layout_above="@id/dictionaryOverlay"/>
+
+    <RelativeLayout
+        android:id="@+id/dictionaryOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:background="#FFF"
+        android:layout_alignParentBottom="true">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#3949AB"/>
+
+        <TextView
+            android:id="@+id/resultText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:text="@string/text"
+            android:textSize="32sp"
+            android:textColor="#555555"/>
+    </RelativeLayout>
 
 </RelativeLayout>
