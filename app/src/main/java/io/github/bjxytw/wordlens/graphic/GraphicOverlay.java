@@ -2,103 +2,79 @@ package io.github.bjxytw.wordlens.graphic;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewTreeObserver;
 
-import com.google.android.gms.common.images.Size;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class GraphicOverlay extends View {
+    private static final int CURSOR_AREA_SIZE = 50;
+
     private final Object lock = new Object();
-    private int previewWidth;
+    private final CursorGraphic cursorGraphic;
+
     private float widthScaleFactor = 1.0f;
-    private int previewHeight;
     private float heightScaleFactor = 1.0f;
-    private final List<Graphic> graphics = new ArrayList<>();
-    private int viewWidth;
-    private int viewHeight;
 
-    public abstract static class Graphic {
-        private GraphicOverlay overlay;
-
-        Graphic(GraphicOverlay overlay) {
-            this.overlay = overlay;
-        }
-
-        public abstract void draw(Canvas canvas);
-
-        float scaleX(float horizontal) {
-            return horizontal * overlay.widthScaleFactor;
-        }
-
-        float scaleY(float vertical) {
-            return vertical * overlay.heightScaleFactor;
-        }
-
-        float translateX(float x) {
-            return scaleX(x);
-        }
-
-        float translateY(float y) {
-            return scaleY(y);
-        }
-
-    }
+    private TextGraphic textGraphic;
+    private Rect cursorRect;
 
     public GraphicOverlay(Context context, AttributeSet attrs) {
         super(context, attrs);
+        getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                int areaRadius = CURSOR_AREA_SIZE / 2;
+                int cursorX = getWidth() / 2;
+                int cursorY = getHeight() / 2;
+                cursorRect = new Rect(
+                        cursorX - areaRadius, cursorY - areaRadius,
+                        cursorX + areaRadius, cursorY + areaRadius);
+            }
+        });
+        cursorGraphic = new CursorGraphic(this);
     }
 
-    public void clear() {
-        synchronized (lock) {
-            graphics.clear();
-        }
+    public void clearText() {
+        textGraphic = null;
         postInvalidate();
     }
 
-    public void add(Graphic graphic) {
+    public void changeText(TextGraphic graphic) {
         synchronized (lock) {
-            graphics.add(graphic);
+            textGraphic = graphic;
         }
     }
 
-    public void setCameraSize(Size previewSize) {
+    public void setScale (int cameraWidth, int cameraHeight,
+                             int previewWidth, int previewHeight) {
         synchronized (lock) {
-            this.previewWidth = previewSize.getWidth();
-            this.previewHeight = previewSize.getHeight();
+            widthScaleFactor = (float) previewWidth / (float) cameraWidth;
+            heightScaleFactor = (float) previewHeight / (float) cameraHeight;
         }
     }
 
-    public void setViewSize(int width, int height) {
-        synchronized (lock) {
-            viewWidth = width;
-            viewHeight = height;
-            requestLayout();
-        }
+    public Rect getCursorRect() {
+        return cursorRect;
+    }
+
+    public float translateX(float x) {
+        return x * widthScaleFactor;
+    }
+
+    public float translateY(float y) {
+        return y * heightScaleFactor;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         synchronized (lock) {
-            if ((previewWidth != 0) && (previewHeight != 0)) {
-                widthScaleFactor = (float) getWidth() / (float) previewWidth;
-                heightScaleFactor = (float) getHeight() / (float) previewHeight;
-            }
-
-            for (Graphic graphic : graphics) {
-                graphic.draw(canvas);
-            }
+            if (textGraphic != null)
+                textGraphic.draw(canvas);
+            cursorGraphic.draw(canvas);
         }
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (viewWidth > 0 && viewHeight > 0)
-            setMeasuredDimension(viewWidth, viewHeight);
     }
 }

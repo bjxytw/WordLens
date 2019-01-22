@@ -48,12 +48,6 @@ public class CameraSourcePreview extends SurfaceView {
         if (startRequested && surfaceAvailable) {
             cameraSource.start(getHolder());
             requestLayout();
-            if (overlay != null) {
-                Size size = cameraSource.getPreviewSize();
-                Size swappedSize = new Size(size.getHeight(), size.getWidth());
-                overlay.setCameraSize(swappedSize);
-                overlay.clear();
-            }
             startRequested = false;
         }
     }
@@ -67,7 +61,8 @@ public class CameraSourcePreview extends SurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        if (cameraSource != null)
+        if (cameraSource != null &&
+                event.getX() < overlay.getWidth() && event.getY() < overlay.getHeight())
             cameraSource.setCameraFocus();
         return true;
     }
@@ -76,20 +71,21 @@ public class CameraSourcePreview extends SurfaceView {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         if (cameraSource != null) {
-            Size size = cameraSource.getPreviewSize();
+            Size size = cameraSource.getSize();
             if (size != null) {
                 int width = MeasureSpec.getSize(widthMeasureSpec);
                 int height = MeasureSpec.getSize(heightMeasureSpec);
-                int previewWidth = size.getHeight();
-                int previewHeight = size.getWidth();
+                int cameraWidth = size.getHeight();
+                int cameraHeight = size.getWidth();
 
-                if (width < height * previewWidth / previewHeight) {
-                    height = width * previewHeight / previewWidth;
+                if (width < height * cameraWidth / cameraHeight) {
+                    height = width * cameraHeight / cameraWidth;
                     setMeasuredDimension(width, height);
-                    if (overlay != null) {
-                        overlay.setViewSize(width, height);
-                        overlay.clear();
-                    }
+                }
+
+                if (overlay != null) {
+                    overlay.setScale(cameraWidth, cameraHeight, width, height);
+                    overlay.clearText();
                 }
             }
         }

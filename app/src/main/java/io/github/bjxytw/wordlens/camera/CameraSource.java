@@ -31,13 +31,12 @@ public class CameraSource {
     @SuppressLint("InlinedApi")
 
     public static final int ROTATION = FirebaseVisionImageMetadata.ROTATION_90;
-    public static final int ROTATION_DEGREE = 90;
+    private static final int ROTATION_DEGREE = 90;
 
     private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
     private static final float REQUESTED_FPS = 20.0f;
     private static final int REQUESTED_PREVIEW_WIDTH = 640;
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
-    private static final int FOCUS_AREA_SIZE = 100;
 
     private static final String TAG = "CameraSource";
 
@@ -51,22 +50,22 @@ public class CameraSource {
     private Thread processingThread;
     private TextRecognitionProcessor frameProcessor;
     private Camera camera;
-    private Size previewSize;
+    private Size size;
 
     private boolean supportedAutoFocus;
 
-    public CameraSource(GraphicOverlay overlay) {
+    public CameraSource(GraphicOverlay overlay, TextRecognitionProcessor frameProcessor) {
         graphicOverlay = overlay;
-        graphicOverlay.clear();
+        graphicOverlay.clearText();
         processingRunnable = new FrameProcessingRunnable();
-        frameProcessor = new TextRecognitionProcessor();
+        this.frameProcessor = frameProcessor;
     }
 
     public void release() {
         synchronized (processorLock) {
             stop();
             processingRunnable.release();
-            cleanScreen();
+            graphicOverlay.clearText();
 
             if (frameProcessor != null)
                 frameProcessor.stop();
@@ -120,12 +119,12 @@ public class CameraSource {
             throw new IOException("Could not find requested camera.");
         Camera camera = Camera.open(requestedCameraId);
 
-        Size size = selectPreviewSize(camera);
-        if (size == null)
+        Size previewSize = selectPreviewSize(camera);
+        if (previewSize == null)
             throw new IOException("Could not find suitable preview size.");
-        previewSize = size;
+        size = previewSize;
 
-        Log.i(TAG, "Selected preview size: " + previewSize.toString());
+        Log.i(TAG, "Selected preview size: " + this.size.toString());
 
         int[] previewFpsRange = selectPreviewFpsRange(camera);
         if (previewFpsRange == null)
@@ -138,7 +137,7 @@ public class CameraSource {
 
         Camera.Parameters parameters = camera.getParameters();
 
-        parameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+        parameters.setPreviewSize(this.size.getWidth(), this.size.getHeight());
         parameters.setPreviewFpsRange(minFps, maxFps);
         parameters.setPreviewFormat(ImageFormat.NV21);
 
@@ -158,25 +157,21 @@ public class CameraSource {
 
         // Four frame buffers are needed for working with the camera.
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
-        camera.addCallbackBuffer(createPreviewBuffer(previewSize));
-        camera.addCallbackBuffer(createPreviewBuffer(previewSize));
-        camera.addCallbackBuffer(createPreviewBuffer(previewSize));
-        camera.addCallbackBuffer(createPreviewBuffer(previewSize));
+        camera.addCallbackBuffer(createPreviewBuffer(size));
+        camera.addCallbackBuffer(createPreviewBuffer(size));
+        camera.addCallbackBuffer(createPreviewBuffer(size));
+        camera.addCallbackBuffer(createPreviewBuffer(size));
 
         return camera;
     }
 
     public void setCameraFocus() {
-        if (supportedAutoFocus) {
-            Camera.Parameters parameters = camera.getParameters();
-            int x = previewSize.getWidth() / 2;
-            int y = previewSize.getHeight() / 2;
+        Camera.Parameters parameters = camera.getParameters();
+        Rect rect = graphicOverlay.getCursorRect();
 
-            int areaRadius = FOCUS_AREA_SIZE / 2;
+        if (supportedAutoFocus && parameters != null && rect != null) {
             List<Camera.Area> focusArea = new ArrayList<>();
-            focusArea.add(new Camera.Area(new Rect(
-                    x - areaRadius, y - areaRadius,
-                    x + areaRadius, y + areaRadius), 1));
+            focusArea.add(new Camera.Area(rect, 1));
             parameters.setFocusAreas(focusArea);
 
             camera.setParameters(parameters);
@@ -199,12 +194,8 @@ public class CameraSource {
         return -1;
     }
 
-    private void cleanScreen() {
-        graphicOverlay.clear();
-    }
-
-    public Size getPreviewSize() {
-        return previewSize;
+    public Size getSize() {
+        return size;
     }
 
     @SuppressLint("InlinedApi")
@@ -295,10 +286,7 @@ public class CameraSource {
                 try {
                     synchronized (processorLock) {
                         Log.d(TAG, "Process an image");
-                        frameProcessor.process(
-                                data,
-                                previewSize,
-                                graphicOverlay);
+                        frameProcessor.process(data, size);
                     }
                 } catch (Throwable t) {
                     Log.e(TAG, "Exception thrown from receiver.", t);

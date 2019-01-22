@@ -1,44 +1,35 @@
 package io.github.bjxytw.wordlens;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.google.android.gms.common.images.Size;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
-import io.github.bjxytw.wordlens.graphic.CameraImageGraphic;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 import io.github.bjxytw.wordlens.graphic.TextGraphic;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-/**
- * Processor for the text recognition.
- */
 public class TextRecognitionProcessor {
 
     private static final String TAG = "TextRec";
 
     private final FirebaseVisionTextRecognizer detector;
+    private GraphicOverlay graphicOverlay;
+    private TextView resultText;
 
     @GuardedBy("this")
     private ByteBuffer latestImage;
@@ -52,34 +43,33 @@ public class TextRecognitionProcessor {
     @GuardedBy("this")
     private Size processingImageSize;
 
-    public TextRecognitionProcessor() {
+    TextRecognitionProcessor(GraphicOverlay overlay, TextView resultText) {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
-
+        graphicOverlay = overlay;
+        this.resultText = resultText;
     }
 
     public synchronized void process(
-            ByteBuffer data, final Size frameSize, final GraphicOverlay
-            graphicOverlay) {
+            ByteBuffer data, final Size frameSize) {
         latestImage = data;
         latestImageSize = frameSize;
         if (processingImage == null && processingImageSize == null) {
-            processLatestImage(graphicOverlay);
+            processLatestImage();
         }
     }
 
-    private synchronized void processLatestImage(final GraphicOverlay graphicOverlay) {
+    private synchronized void processLatestImage() {
         processingImage = latestImage;
         processingImageSize = latestImageSize;
         latestImage = null;
         latestImageSize = null;
         if (processingImage != null && processingImageSize != null) {
-            processImage(processingImage, processingImageSize, graphicOverlay);
+            processImage(processingImage, processingImageSize);
         }
     }
 
-    private void processImage(
-            ByteBuffer data, final Size frameSize,
-            final GraphicOverlay graphicOverlay) {
+    private void processImage(ByteBuffer data, final Size frameSize) {
+
         FirebaseVisionImageMetadata metadata =
                 new FirebaseVisionImageMetadata.Builder()
                         .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
@@ -87,39 +77,32 @@ public class TextRecognitionProcessor {
                         .setHeight(frameSize.getHeight())
                         .setRotation(CameraSource.ROTATION)
                         .build();
-
-        Bitmap bitmap = getBitmap(data, frameSize);
-        detectInVisionImage(
-                bitmap, FirebaseVisionImage.fromByteBuffer(data, metadata), graphicOverlay);
+        detectInVisionImage(FirebaseVisionImage.fromByteBuffer(data, metadata));
     }
 
-    private void detectInVisionImage(
-            final Bitmap originalCameraImage,
-            FirebaseVisionImage image,
-            final GraphicOverlay graphicOverlay) {
-        Task<FirebaseVisionText> detectInImage = detector.processImage(image);
-        detectInImage.addOnSuccessListener(
+    private void detectInVisionImage(FirebaseVisionImage image) {
+
+        detector.processImage(image).addOnSuccessListener(
                 new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
-                        graphicOverlay.clear();
-
-
-
+                        graphicOverlay.clearText();
                         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
                         for (int i = 0; i < blocks.size(); i++) {
                             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
                             for (int j = 0; j < lines.size(); j++) {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
-                                    GraphicOverlay.Graphic textGraphic = new TextGraphic(graphicOverlay,
-                                            elements.get(k));
-                                    graphicOverlay.add(textGraphic);
+                                    FirebaseVisionText.Element element = elements.get(k);
+                                    if (detectInCursor(graphicOverlay, element)) {
+                                        graphicOverlay.changeText(new TextGraphic(graphicOverlay, element));
+                                        resultText.setText(element.getText());
+                                    }
                                 }
                             }
                         }
                         graphicOverlay.postInvalidate();
-                        processLatestImage(graphicOverlay);
+                        processLatestImage();
                     }
                 })
                 .addOnFailureListener(
@@ -131,6 +114,25 @@ public class TextRecognitionProcessor {
                         });
     }
 
+    private boolean detectInCursor (GraphicOverlay overlay, FirebaseVisionText.Element element) {
+        Rect cursor = overlay.getCursorRect();
+        Rect boundingBox = element.getBoundingBox();
+
+        if (cursor != null && boundingBox != null) {
+            Rect text = new Rect(
+                    (int) overlay.translateX(boundingBox.left),
+                    (int) overlay.translateY(boundingBox.top),
+                    (int) overlay.translateX(boundingBox.right),
+                    (int) overlay.translateY(boundingBox.bottom));
+
+            int x = cursor.centerX();
+            int y = cursor.centerY();
+
+            return x > text.left && y > text.top && x < text.right && y < text.bottom;
+        }
+        return false;
+    }
+
     public void stop() {
         try {
             detector.close();
@@ -138,29 +140,4 @@ public class TextRecognitionProcessor {
             Log.e(TAG, "Exception thrown while trying to close Text Detector: " + e);
         }
     }
-
-    @Nullable
-    private Bitmap getBitmap(ByteBuffer data, Size frameSize) {
-        data.rewind();
-        byte[] imageInBuffer = new byte[data.limit()];
-        data.get(imageInBuffer, 0, imageInBuffer.length);
-        try {
-            YuvImage image = new YuvImage(imageInBuffer, ImageFormat.NV21,
-                    frameSize.getWidth(), frameSize.getHeight(), null);
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            image.compressToJpeg(new Rect(0, 0, frameSize.getWidth(), frameSize.getHeight()), 80, stream);
-
-            Bitmap bmp = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
-
-            stream.close();
-            Matrix matrix = new Matrix();
-            matrix.postRotate(CameraSource.ROTATION_DEGREE);
-            return Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error: " + e.getMessage());
-        }
-        return null;
-    }
-
 }
