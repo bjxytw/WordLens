@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Word Lens</string>
-    <string name="text">Recognizing..</string>
+    <string name="text">Now recognizing..</string>
 </resources>

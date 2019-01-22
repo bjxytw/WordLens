@@ -25,16 +25,13 @@ import java.util.Map;
 import io.github.bjxytw.wordlens.TextRecognitionProcessor;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
-@SuppressLint("MissingPermission")
 @SuppressWarnings("deprecation")
 public class CameraSource {
-    @SuppressLint("InlinedApi")
-
     public static final int ROTATION = FirebaseVisionImageMetadata.ROTATION_90;
     private static final int ROTATION_DEGREE = 90;
 
     private static final int CAMERA_FACING_BACK = CameraInfo.CAMERA_FACING_BACK;
-    private static final float REQUESTED_FPS = 20.0f;
+    private static final float REQUESTED_FPS = 10.0f;
     private static final int REQUESTED_PREVIEW_WIDTH = 640;
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
 
@@ -137,7 +134,7 @@ public class CameraSource {
 
         Camera.Parameters parameters = camera.getParameters();
 
-        parameters.setPreviewSize(this.size.getWidth(), this.size.getHeight());
+        parameters.setPreviewSize(size.getWidth(), size.getHeight());
         parameters.setPreviewFpsRange(minFps, maxFps);
         parameters.setPreviewFormat(ImageFormat.NV21);
 
@@ -229,9 +226,8 @@ public class CameraSource {
 
         FrameProcessingRunnable() {}
 
-        @SuppressLint("Assert")
         void release() {
-            assert (processingThread.getState() == State.TERMINATED);
+            if (processingThread.getState() != State.TERMINATED) throw new AssertionError();
         }
 
         void setActive(boolean active) {
@@ -260,8 +256,6 @@ public class CameraSource {
             }
         }
 
-        @SuppressLint("InlinedApi")
-        @SuppressWarnings("GuardedBy")
         @Override
         public void run() {
             ByteBuffer data;
@@ -285,7 +279,7 @@ public class CameraSource {
 
                 try {
                     synchronized (processorLock) {
-                        Log.d(TAG, "Process an image");
+
                         frameProcessor.process(data, size);
                     }
                 } catch (Throwable t) {
@@ -295,6 +289,7 @@ public class CameraSource {
                 }
             }
         }
+
     }
 
     private static Size selectPreviewSize(Camera camera) {

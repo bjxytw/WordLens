@@ -1,7 +1,6 @@
 package io.github.bjxytw.wordlens;
 
 import android.graphics.Rect;
-import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.TextView;
@@ -31,16 +30,7 @@ public class TextRecognitionProcessor {
     private GraphicOverlay graphicOverlay;
     private TextView resultText;
 
-    @GuardedBy("this")
-    private ByteBuffer latestImage;
-
-    @GuardedBy("this")
-    private Size latestImageSize;
-
-    @GuardedBy("this")
     private ByteBuffer processingImage;
-
-    @GuardedBy("this")
     private Size processingImageSize;
 
     TextRecognitionProcessor(GraphicOverlay overlay, TextView resultText) {
@@ -49,27 +39,20 @@ public class TextRecognitionProcessor {
         this.resultText = resultText;
     }
 
-    public synchronized void process(
-            ByteBuffer data, final Size frameSize) {
-        latestImage = data;
-        latestImageSize = frameSize;
-        if (processingImage == null && processingImageSize == null) {
-            processLatestImage();
+    public void process(ByteBuffer data, final Size size) {
+
+        if (data != null && size != null &&
+                processingImage == null && processingImageSize == null) {
+
+                Log.i(TAG, "Process an image");
+                processingImage = data;
+                processingImageSize = size;
+                detectImage(processingImage, processingImageSize);
         }
     }
 
-    private synchronized void processLatestImage() {
-        processingImage = latestImage;
-        processingImageSize = latestImageSize;
-        latestImage = null;
-        latestImageSize = null;
-        if (processingImage != null && processingImageSize != null) {
-            processImage(processingImage, processingImageSize);
-        }
-    }
 
-    private void processImage(ByteBuffer data, final Size frameSize) {
-
+    private void detectImage(ByteBuffer data, final Size frameSize) {
         FirebaseVisionImageMetadata metadata =
                 new FirebaseVisionImageMetadata.Builder()
                         .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
@@ -77,13 +60,9 @@ public class TextRecognitionProcessor {
                         .setHeight(frameSize.getHeight())
                         .setRotation(CameraSource.ROTATION)
                         .build();
-        detectInVisionImage(FirebaseVisionImage.fromByteBuffer(data, metadata));
-    }
 
-    private void detectInVisionImage(FirebaseVisionImage image) {
-
-        detector.processImage(image).addOnSuccessListener(
-                new OnSuccessListener<FirebaseVisionText>() {
+        detector.processImage(FirebaseVisionImage.fromByteBuffer(data, metadata))
+                .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
                         graphicOverlay.clearText();
@@ -94,41 +73,37 @@ public class TextRecognitionProcessor {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
                                     FirebaseVisionText.Element element = elements.get(k);
-                                    if (detectInCursor(graphicOverlay, element)) {
+                                    if (isInCursor(graphicOverlay, element)) {
                                         graphicOverlay.changeText(new TextGraphic(graphicOverlay, element));
                                         resultText.setText(element.getText());
+                                        Log.i(TAG, "Detected: " + element.getText());
                                     }
                                 }
                             }
                         }
                         graphicOverlay.postInvalidate();
-                        processLatestImage();
+                        processingImage = null;
+                        processingImageSize = null;
                     }
                 })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.w(TAG, "Text detection failed." + e);
-                            }
-                        });
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Text detection failed." + e);
+                    }
+                });
     }
 
-    private boolean detectInCursor (GraphicOverlay overlay, FirebaseVisionText.Element element) {
+    private boolean isInCursor(GraphicOverlay overlay, FirebaseVisionText.Element element) {
         Rect cursor = overlay.getCursorRect();
-        Rect boundingBox = element.getBoundingBox();
+        Rect text = element.getBoundingBox();
 
-        if (cursor != null && boundingBox != null) {
-            Rect text = new Rect(
-                    (int) overlay.translateX(boundingBox.left),
-                    (int) overlay.translateY(boundingBox.top),
-                    (int) overlay.translateX(boundingBox.right),
-                    (int) overlay.translateY(boundingBox.bottom));
+        if (cursor != null && text != null) {
+            float x = cursor.centerX();
+            float y = cursor.centerY();
 
-            int x = cursor.centerX();
-            int y = cursor.centerY();
-
-            return x > text.left && y > text.top && x < text.right && y < text.bottom;
+            return x > overlay.translateX(text.left) && y > overlay.translateY(text.top)
+                    && x < overlay.translateX(text.right) && y < overlay.translateY(text.bottom);
         }
         return false;
     }
