@@ -15,7 +15,6 @@ import com.google.android.gms.common.images.Size;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 
 import java.io.IOException;
-import java.lang.Thread.State;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -53,7 +52,7 @@ public class CameraSource {
 
     public CameraSource(GraphicOverlay overlay, TextRecognitionProcessor frameProcessor) {
         graphicOverlay = overlay;
-        graphicOverlay.clearText();
+        graphicOverlay.clearBox();
         processingRunnable = new FrameProcessingRunnable();
         this.frameProcessor = frameProcessor;
     }
@@ -61,8 +60,7 @@ public class CameraSource {
     public void release() {
         synchronized (processorLock) {
             stop();
-            processingRunnable.release();
-            graphicOverlay.clearText();
+            graphicOverlay.clearBox();
 
             if (frameProcessor != null)
                 frameProcessor.stop();
@@ -109,7 +107,6 @@ public class CameraSource {
         bytesToByteBuffer.clear();
     }
 
-    @SuppressLint("InlinedApi")
     private Camera createCamera() throws IOException {
         int requestedCameraId = getIdForRequestedCamera();
         if (requestedCameraId == -1)
@@ -195,7 +192,6 @@ public class CameraSource {
         return size;
     }
 
-    @SuppressLint("InlinedApi")
     private byte[] createPreviewBuffer(Size previewSize) {
         int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
         long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
@@ -225,10 +221,6 @@ public class CameraSource {
         private ByteBuffer pendingFrameData;
 
         FrameProcessingRunnable() {}
-
-        void release() {
-            if (processingThread.getState() != State.TERMINATED) throw new AssertionError();
-        }
 
         void setActive(boolean active) {
             synchronized (lock) {
@@ -321,7 +313,6 @@ public class CameraSource {
         return validPreviewSizes;
     }
 
-    @SuppressLint("InlinedApi")
     private static int[] selectPreviewFpsRange(Camera camera) {
 
         int desiredPreviewFpsScaled = (int) (REQUESTED_FPS * 1000.0f);

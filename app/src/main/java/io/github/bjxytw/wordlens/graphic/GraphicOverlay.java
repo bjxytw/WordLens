@@ -17,7 +17,7 @@ public class GraphicOverlay extends View {
     private float widthScaleFactor = 1.0f;
     private float heightScaleFactor = 1.0f;
 
-    private TextGraphic textGraphic;
+    private BoundingBoxGraphic boundingBoxGraphic;
     private Rect cursorRect;
 
     public GraphicOverlay(Context context, AttributeSet attrs) {
@@ -37,14 +37,14 @@ public class GraphicOverlay extends View {
         cursorGraphic = new CursorGraphic(this);
     }
 
-    public void clearText() {
-        textGraphic = null;
+    public void clearBox() {
+        boundingBoxGraphic = null;
         postInvalidate();
     }
 
-    public void changeText(TextGraphic graphic) {
+    public void changeBox(BoundingBoxGraphic graphic) {
         synchronized (lock) {
-            textGraphic = graphic;
+            boundingBoxGraphic = graphic;
         }
     }
 
@@ -72,8 +72,8 @@ public class GraphicOverlay extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         synchronized (lock) {
-            if (textGraphic != null)
-                textGraphic.draw(canvas);
+            if (boundingBoxGraphic != null)
+                boundingBoxGraphic.draw(canvas);
             cursorGraphic.draw(canvas);
         }
     }

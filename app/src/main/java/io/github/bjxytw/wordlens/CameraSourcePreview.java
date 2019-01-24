@@ -85,7 +85,7 @@ public class CameraSourcePreview extends SurfaceView {
 
                 if (overlay != null) {
                     overlay.setScale(cameraWidth, cameraHeight, width, height);
-                    overlay.clearText();
+                    overlay.clearBox();
                 }
             }
         }

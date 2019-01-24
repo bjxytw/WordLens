@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Word Lens</string>
     <string name="text">Now recognizing..</string>
+    <string name="permission_request">アプリを開始できません。\n権限を許可して下さい。</string>
 </resources>

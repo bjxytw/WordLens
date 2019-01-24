@@ -16,7 +16,7 @@ import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
-import io.github.bjxytw.wordlens.graphic.TextGraphic;
+import io.github.bjxytw.wordlens.graphic.BoundingBoxGraphic;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,6 +25,7 @@ import java.util.List;
 public class TextRecognitionProcessor {
 
     private static final String TAG = "TextRec";
+    private static final String SYMBOLS = "[!?,.;:()\"]";
 
     private final FirebaseVisionTextRecognizer detector;
     private GraphicOverlay graphicOverlay;
@@ -65,7 +66,7 @@ public class TextRecognitionProcessor {
                 .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
-                        graphicOverlay.clearText();
+                        graphicOverlay.clearBox();
                         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
                         for (int i = 0; i < blocks.size(); i++) {
                             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
@@ -74,9 +75,11 @@ public class TextRecognitionProcessor {
                                 for (int k = 0; k < elements.size(); k++) {
                                     FirebaseVisionText.Element element = elements.get(k);
                                     if (isInCursor(graphicOverlay, element)) {
-                                        graphicOverlay.changeText(new TextGraphic(graphicOverlay, element));
-                                        resultText.setText(element.getText());
-                                        Log.i(TAG, "Detected: " + element.getText());
+                                        graphicOverlay.changeBox(new BoundingBoxGraphic(
+                                                graphicOverlay, element.getBoundingBox()));
+                                        String result = removeSymbol(element.getText());
+                                        resultText.setText(result);
+                                        Log.i(TAG, "Detected: " + result);
                                     }
                                 }
                             }
@@ -89,12 +92,12 @@ public class TextRecognitionProcessor {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Text detection failed." + e);
+                        Log.e(TAG, "Text detection failed." + e);
                     }
                 });
     }
 
-    private boolean isInCursor(GraphicOverlay overlay, FirebaseVisionText.Element element) {
+    private static boolean isInCursor(GraphicOverlay overlay, FirebaseVisionText.Element element) {
         Rect cursor = overlay.getCursorRect();
         Rect text = element.getBoundingBox();
 
@@ -106,6 +109,10 @@ public class TextRecognitionProcessor {
                     && x < overlay.translateX(text.right) && y < overlay.translateY(text.bottom);
         }
         return false;
+    }
+
+    private static String removeSymbol(String text) {
+        return text.replaceAll(SYMBOLS, "");
     }
 
     public void stop() {

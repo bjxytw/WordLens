@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000"
+    android:background="@color/black"
     android:keepScreenOn="true">
 
     <io.github.bjxytw.wordlens.CameraSourcePreview
@@ -16,19 +16,14 @@
         android:id="@+id/graphicOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/dictionaryOverlay"/>
+        android:layout_above="@id/resultPreview"/>
 
     <RelativeLayout
-        android:id="@+id/dictionaryOverlay"
+        android:id="@+id/toolOverlay"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:background="#FFF"
-        android:layout_alignParentBottom="true">
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="#3949AB"/>
-
+        android:layout_height="50dp"
+        android:background="@color/colorOverlay"
+        android:layout_alignBottom="@+id/graphicOverlay">
         <TextView
             android:id="@+id/resultText"
             android:layout_width="match_parent"
@@ -36,7 +31,19 @@
             android:layout_margin="8dp"
             android:text="@string/text"
             android:textSize="24sp"
-            android:textColor="#555555"/>
+            android:textColor="@color/white"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/resultPreview"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:background="@color/colorPrimaryLight"
+        android:layout_alignParentBottom="true">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/colorAccent"/>
     </RelativeLayout>
 
 </RelativeLayout>

@@ -9,6 +9,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,22 +72,40 @@ public final class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause");
         preview.stop();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy");
         if (cameraSource != null)
             cameraSource.release();
     }
 
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (allPermissionsGranted()) {
+            Log.i(TAG, "Permission granted.");
+            createCameraSource();
+        } else {
+            Toast.makeText(this,
+                    R.string.permission_request,Toast.LENGTH_LONG).show();
+            Log.i(TAG, "Permission denied.");
+            finish();
+        }
+    }
+
     private void getRuntimePermissions() {
         List<String> allNeededPermissions = new ArrayList<>();
-        for (String permission : getRequiredPermissions()) {
+        for (String permission : getRequiredPermissionList()) {
             Log.i(TAG, "requiredPermission: " + permission);
 
-            if (isPermissionNotGranted(this, permission))
+            if (isPermissionDenied(this, permission))
                 allNeededPermissions.add(permission);
         }
 
@@ -95,7 +114,7 @@ public final class MainActivity extends AppCompatActivity {
                     allNeededPermissions.toArray(new String[0]), PERMISSION_REQUESTS);
     }
 
-    private String[] getRequiredPermissions() {
+    private String[] getRequiredPermissionList() {
         try {
             PackageInfo info = this.getPackageManager()
                     .getPackageInfo(this.getPackageName(), PackageManager.GET_PERMISSIONS);
@@ -109,25 +128,14 @@ public final class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.i(TAG, "Permission granted!");
-
-        if (allPermissionsGranted())
-            createCameraSource();
-
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
     private boolean allPermissionsGranted() {
-        for (String permission : getRequiredPermissions())
-            if (isPermissionNotGranted(this, permission))
+        for (String permission : getRequiredPermissionList())
+            if (isPermissionDenied(this, permission))
                 return false;
         return true;
     }
 
-    private static boolean isPermissionNotGranted(Context context, String permission) {
+    private static boolean isPermissionDenied(Context context, String permission) {
         return ContextCompat.checkSelfPermission(context, permission)
                 != PackageManager.PERMISSION_GRANTED;
     }
