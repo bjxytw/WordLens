@@ -3,6 +3,7 @@ package io.github.bjxytw.wordlens;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -17,14 +18,15 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
+import io.github.bjxytw.wordlens.db.DatabaseHelper;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
 public final class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private static final int PERMISSION_REQUESTS = 1;
+    private static final int REQUEST_CODE = 1;
     private CameraSource cameraSource = null;
+    private CameraPreview preview;
     private TextRecognitionProcessor frameProcessor;
-    private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
 
     @Override
@@ -40,9 +42,16 @@ public final class MainActivity extends AppCompatActivity {
         TextView resultText = findViewById(R.id.resultText);
         frameProcessor = new TextRecognitionProcessor(graphicOverlay, resultText);
 
-        if (allPermissionsGranted())
-            createCameraSource();
-        else getRuntimePermissions();
+        if (isAllPermissionsGranted())
+            createSources();
+        else getPermissions();
+    }
+
+    private void createSources() {
+        DatabaseHelper helper = new DatabaseHelper(this);
+        SQLiteDatabase database = helper.openDataBase();
+        database.close();
+        createCameraSource();
     }
 
     private void createCameraSource() {
@@ -89,29 +98,29 @@ public final class MainActivity extends AppCompatActivity {
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (allPermissionsGranted()) {
+        if (isAllPermissionsGranted()) {
             Log.i(TAG, "Permission granted.");
-            createCameraSource();
+            createSources();
         } else {
+            Log.i(TAG, "Permission denied.");
             Toast.makeText(this,
                     R.string.permission_request,Toast.LENGTH_LONG).show();
-            Log.i(TAG, "Permission denied.");
             finish();
         }
     }
 
-    private void getRuntimePermissions() {
-        List<String> allNeededPermissions = new ArrayList<>();
+    private void getPermissions() {
+        List<String> permissions = new ArrayList<>();
         for (String permission : getRequiredPermissionList()) {
             Log.i(TAG, "requiredPermission: " + permission);
 
             if (isPermissionDenied(this, permission))
-                allNeededPermissions.add(permission);
+                permissions.add(permission);
         }
 
-        if (!allNeededPermissions.isEmpty())
+        if (!permissions.isEmpty())
             ActivityCompat.requestPermissions(this,
-                    allNeededPermissions.toArray(new String[0]), PERMISSION_REQUESTS);
+                    permissions.toArray(new String[0]), REQUEST_CODE);
     }
 
     private String[] getRequiredPermissionList() {
@@ -128,7 +137,7 @@ public final class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean allPermissionsGranted() {
+    private boolean isAllPermissionsGranted() {
         for (String permission : getRequiredPermissionList())
             if (isPermissionDenied(this, permission))
                 return false;
@@ -137,6 +146,6 @@ public final class MainActivity extends AppCompatActivity {
 
     private static boolean isPermissionDenied(Context context, String permission) {
         return ContextCompat.checkSelfPermission(context, permission)
-                != PackageManager.PERMISSION_GRANTED;
+                == PackageManager.PERMISSION_DENIED;
     }
 }

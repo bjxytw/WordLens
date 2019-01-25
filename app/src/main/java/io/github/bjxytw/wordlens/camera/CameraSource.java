@@ -2,7 +2,6 @@ package io.github.bjxytw.wordlens.camera;
 
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.hardware.Camera;
@@ -57,16 +56,6 @@ public class CameraSource {
         this.frameProcessor = frameProcessor;
     }
 
-    public void release() {
-        synchronized (processorLock) {
-            stop();
-            graphicOverlay.clearBox();
-
-            if (frameProcessor != null)
-                frameProcessor.stop();
-        }
-    }
-
     @RequiresPermission(Manifest.permission.CAMERA)
     public synchronized void start(SurfaceHolder surfaceHolder) throws IOException {
         if (camera != null) return;
@@ -105,6 +94,16 @@ public class CameraSource {
         }
 
         bytesToByteBuffer.clear();
+    }
+
+    public void release() {
+        synchronized (processorLock) {
+            stop();
+            graphicOverlay.clearBox();
+
+            if (frameProcessor != null)
+                frameProcessor.stop();
+        }
     }
 
     private Camera createCamera() throws IOException {
@@ -285,13 +284,17 @@ public class CameraSource {
     }
 
     private static Size selectPreviewSize(Camera camera) {
-        List<Size> validPreviewSizes = generateValidPreviewSizeList(camera);
-
+        Camera.Parameters parameters = camera.getParameters();
+        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+        List<Size> validPreviewSizes = new ArrayList<>();
         Size selectedPreviewSize = null;
+
+        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes)
+            validPreviewSizes.add(new Size(previewSize.width, previewSize.height));
+
         int minDiff = Integer.MAX_VALUE;
         for (Size previewSize : validPreviewSizes) {
-            int diff =
-                    Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
+            int diff = Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
                             + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
             if (diff < minDiff) {
                 selectedPreviewSize = previewSize;
@@ -300,17 +303,6 @@ public class CameraSource {
         }
 
         return selectedPreviewSize;
-    }
-
-    private static List<Size> generateValidPreviewSizeList(Camera camera) {
-        Camera.Parameters parameters = camera.getParameters();
-        List<Camera.Size> supportedPreviewSizes =
-                parameters.getSupportedPreviewSizes();
-        List<Size> validPreviewSizes = new ArrayList<>();
-        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes)
-            validPreviewSizes.add(new Size(previewSize.width, previewSize.height));
-
-        return validPreviewSizes;
     }
 
     private static int[] selectPreviewFpsRange(Camera camera) {

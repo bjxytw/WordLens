@@ -74,11 +74,12 @@ public class TextRecognitionProcessor {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
                                     FirebaseVisionText.Element element = elements.get(k);
-                                    if (isInCursor(graphicOverlay, element)) {
-                                        graphicOverlay.changeBox(new BoundingBoxGraphic(
-                                                graphicOverlay, element.getBoundingBox()));
-                                        String result = removeSymbol(element.getText());
-                                        resultText.setText(result);
+                                    Rect boxRect = element.getBoundingBox();
+                                    if (isCursorOnBox(graphicOverlay, boxRect)) {
+                                        graphicOverlay.changeBox(
+                                                new BoundingBoxGraphic(graphicOverlay, boxRect));
+                                        String result = element.getText();
+                                        resultText.setText(removeSymbol(result));
                                         Log.i(TAG, "Detected: " + result);
                                     }
                                 }
@@ -97,16 +98,15 @@ public class TextRecognitionProcessor {
                 });
     }
 
-    private static boolean isInCursor(GraphicOverlay overlay, FirebaseVisionText.Element element) {
+    private static boolean isCursorOnBox(GraphicOverlay overlay, Rect box) {
         Rect cursor = overlay.getCursorRect();
-        Rect text = element.getBoundingBox();
 
-        if (cursor != null && text != null) {
+        if (cursor != null && box != null) {
             float x = cursor.centerX();
             float y = cursor.centerY();
 
-            return x > overlay.translateX(text.left) && y > overlay.translateY(text.top)
-                    && x < overlay.translateX(text.right) && y < overlay.translateY(text.bottom);
+            return x > overlay.translateX(box.left) && y > overlay.translateY(box.top)
+                    && x < overlay.translateX(box.right) && y < overlay.translateY(box.bottom);
         }
         return false;
     }

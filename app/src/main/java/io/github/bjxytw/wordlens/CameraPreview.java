@@ -15,7 +15,7 @@ import java.io.IOException;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
-public class CameraSourcePreview extends SurfaceView {
+public class CameraPreview extends SurfaceView {
     private static final String TAG = "CameraPreview";
 
     private boolean startRequested;
@@ -23,7 +23,7 @@ public class CameraSourcePreview extends SurfaceView {
     private CameraSource cameraSource;
     private GraphicOverlay overlay;
 
-    public CameraSourcePreview(Context context, AttributeSet attrs) {
+    public CameraPreview(Context context, AttributeSet attrs) {
         super(context, attrs);
         startRequested = false;
         surfaceAvailable = false;
