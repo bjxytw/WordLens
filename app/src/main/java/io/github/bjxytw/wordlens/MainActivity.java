@@ -9,6 +9,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,9 @@ public final class MainActivity extends AppCompatActivity {
     private CameraPreview preview;
     private TextRecognitionProcessor frameProcessor;
     private GraphicOverlay graphicOverlay;
+    private SQLiteDatabase database;
+    private TextView resultText;
+    private TextView meanText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +43,8 @@ public final class MainActivity extends AppCompatActivity {
         preview = findViewById(R.id.cameraPreview);
         graphicOverlay = findViewById(R.id.graphicOverlay);
 
-        TextView resultText = findViewById(R.id.resultText);
-        frameProcessor = new TextRecognitionProcessor(graphicOverlay, resultText);
+        resultText = findViewById(R.id.resultText);
+        meanText = findViewById(R.id.meanText);
 
         if (isAllPermissionsGranted())
             createSources();
@@ -49,8 +53,8 @@ public final class MainActivity extends AppCompatActivity {
 
     private void createSources() {
         DatabaseHelper helper = new DatabaseHelper(this);
-        SQLiteDatabase database = helper.openDataBase();
-        database.close();
+        database = helper.getReadableDatabase();
+        frameProcessor = new TextRecognitionProcessor(graphicOverlay, database, resultText, meanText);
         createCameraSource();
     }
 
@@ -91,6 +95,8 @@ public final class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onDestroy");
         if (cameraSource != null)
             cameraSource.release();
+        if (database != null)
+            database.close();
     }
 
     @Override

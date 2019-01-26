@@ -1,5 +1,7 @@
 package io.github.bjxytw.wordlens;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -26,18 +28,25 @@ public class TextRecognitionProcessor {
 
     private static final String TAG = "TextRec";
     private static final String SYMBOLS = "[!?,.;:()\"]";
+    private static final String SQL_SEARCH = "SELECT mean FROM items WHERE word=?";
+    private static final String MEAN_COL = "mean";
 
     private final FirebaseVisionTextRecognizer detector;
-    private GraphicOverlay graphicOverlay;
-    private TextView resultText;
+    private final TextView resultTextView;
+    private final TextView meanTextView;
+    private final GraphicOverlay graphicOverlay;
+    private final SQLiteDatabase database;
 
     private ByteBuffer processingImage;
     private Size processingImageSize;
 
-    TextRecognitionProcessor(GraphicOverlay overlay, TextView resultText) {
+    TextRecognitionProcessor(GraphicOverlay overlay, SQLiteDatabase db,
+                             TextView resultTextView, TextView meanTextView) {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
         graphicOverlay = overlay;
-        this.resultText = resultText;
+        database = db;
+        this.resultTextView = resultTextView;
+        this.meanTextView = meanTextView;
     }
 
     public void process(ByteBuffer data, final Size size) {
@@ -67,24 +76,18 @@ public class TextRecognitionProcessor {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
                         graphicOverlay.clearBox();
+
                         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
                         for (int i = 0; i < blocks.size(); i++) {
                             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
                             for (int j = 0; j < lines.size(); j++) {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
-                                    FirebaseVisionText.Element element = elements.get(k);
-                                    Rect boxRect = element.getBoundingBox();
-                                    if (isCursorOnBox(graphicOverlay, boxRect)) {
-                                        graphicOverlay.changeBox(
-                                                new BoundingBoxGraphic(graphicOverlay, boxRect));
-                                        String result = element.getText();
-                                        resultText.setText(removeSymbol(result));
-                                        Log.i(TAG, "Detected: " + result);
-                                    }
+                                    processText(elements.get(k));
                                 }
                             }
                         }
+
                         graphicOverlay.postInvalidate();
                         processingImage = null;
                         processingImageSize = null;
@@ -93,9 +96,30 @@ public class TextRecognitionProcessor {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Text detection failed." + e);
+                        Log.e(TAG, "Text detection failed.", e);
                     }
                 });
+    }
+
+    private void processText(FirebaseVisionText.Element element) {
+        Rect boxRect = element.getBoundingBox();
+        if (isCursorOnBox(graphicOverlay, boxRect)) {
+            graphicOverlay.changeBox(
+                    new BoundingBoxGraphic(graphicOverlay, boxRect));
+            String text = adjustText(element.getText());
+            Log.i(TAG, "Detected: " + text);
+            resultTextView.setText(text);
+            StringBuilder meanText = new StringBuilder();
+            Cursor dbCursor = database.rawQuery(SQL_SEARCH, new String[]{text});
+            while (dbCursor.moveToNext()) {
+                meanText.append(dbCursor.getString(dbCursor.getColumnIndex(MEAN_COL))
+                                .replace(" / ", "\n"));
+                meanText.append("\n\n");
+            }
+            if (meanText.length() > 0)
+                meanTextView.setText(meanText);
+            dbCursor.close();
+        }
     }
 
     private static boolean isCursorOnBox(GraphicOverlay overlay, Rect box) {
@@ -111,8 +135,8 @@ public class TextRecognitionProcessor {
         return false;
     }
 
-    private static String removeSymbol(String text) {
-        return text.replaceAll(SYMBOLS, "");
+    private static String adjustText(String text) {
+        return text.replaceAll(SYMBOLS, "").toLowerCase();
     }
 
     public void stop() {
