@@ -21,11 +21,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private File databasePath;
     private boolean databaseExist = true;
 
-    public DatabaseHelper(Context context) {
+    DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
         this.context = context;
         databasePath = context.getDatabasePath(DB_NAME);
     }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         super.onOpen(db);
@@ -61,7 +62,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 output.write(buffer, 0, size);
             Log.i(TAG, "Copied database from assets.");
         }
-        //Files.copy(inputStream, Path); requires api 26
+        //Files.copy(InputStream, Path); requires api 26
         databaseExist = true;
         return super.getWritableDatabase();
     }

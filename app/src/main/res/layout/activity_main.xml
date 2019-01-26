@@ -16,14 +16,14 @@
         android:id="@+id/graphicOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/resultPreview"/>
+        android:layout_above="@id/meanPreview"/>
 
     <RelativeLayout
         android:id="@+id/toolOverlay"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:background="@color/colorOverlay"
-        android:layout_alignBottom="@+id/graphicOverlay">
+        android:layout_alignBottom="@+id/graphicOverlay"
+        android:background="@color/colorOverlay">
         <TextView
             android:id="@+id/resultText"
             android:layout_width="match_parent"
@@ -35,7 +35,7 @@
     </RelativeLayout>
 
     <RelativeLayout
-        android:id="@+id/resultPreview"
+        android:id="@+id/meanPreview"
         android:layout_width="match_parent"
         android:layout_height="250dp"
         android:background="@color/colorPrimaryLight"
@@ -46,15 +46,29 @@
             android:background="@color/colorAccent"/>
 
         <ScrollView
+            android:id="@+id/meanScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-            <TextView
-                android:id="@+id/meanText"
+
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:textSize="16sp"
-                android:textColor="@color/colorText"/>
+                android:layout_margin="4dp">
+                <TextView
+                    android:id="@+id/headText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="28sp"
+                    android:textColor="@color/colorPrimaryText"/>
+                <TextView
+                    android:id="@+id/meanText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/headText"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorSecondaryText"/>
+            </RelativeLayout>
+
         </ScrollView>
 
     </RelativeLayout>

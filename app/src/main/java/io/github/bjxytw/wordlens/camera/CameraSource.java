@@ -20,7 +20,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.bjxytw.wordlens.TextRecognitionProcessor;
+import io.github.bjxytw.wordlens.processor.TextRecognition;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
 @SuppressWarnings("deprecation")
@@ -43,13 +43,13 @@ public class CameraSource {
     private final Object processorLock = new Object();
 
     private Thread processingThread;
-    private TextRecognitionProcessor frameProcessor;
+    private TextRecognition frameProcessor;
     private Camera camera;
     private Size size;
 
     private boolean supportedAutoFocus;
 
-    public CameraSource(GraphicOverlay overlay, TextRecognitionProcessor frameProcessor) {
+    public CameraSource(GraphicOverlay overlay, TextRecognition frameProcessor) {
         graphicOverlay = overlay;
         graphicOverlay.clearBox();
         processingRunnable = new FrameProcessingRunnable();
@@ -148,11 +148,13 @@ public class CameraSource {
 
         camera.setParameters(parameters);
 
-        // Four frame buffers are needed for working with the camera.
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
-        camera.addCallbackBuffer(createPreviewBuffer(size));
-        camera.addCallbackBuffer(createPreviewBuffer(size));
-        camera.addCallbackBuffer(createPreviewBuffer(size));
+
+        // Four frame buffers are needed for working with the camera.
+        //camera.addCallbackBuffer(createPreviewBuffer(size));
+        //camera.addCallbackBuffer(createPreviewBuffer(size));
+        //camera.addCallbackBuffer(createPreviewBuffer(size));
+
         camera.addCallbackBuffer(createPreviewBuffer(size));
 
         return camera;
