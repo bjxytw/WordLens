@@ -24,7 +24,6 @@ import java.util.List;
 public class TextRecognition {
 
     private static final String TAG = "TextRec";
-    private static final String SYMBOLS = "[!?,.;:()\"]";
 
     private final FirebaseVisionTextRecognizer detector;
     private final GraphicOverlay graphicOverlay;
@@ -34,7 +33,7 @@ public class TextRecognition {
     private Size processingImageSize;
 
     public interface TextRecognitionListener {
-        void onRecognitionResult(String result);
+        void onRecognitionResult(String result, Rect boundingBox);
     }
 
     public TextRecognition(GraphicOverlay overlay) {
@@ -89,19 +88,13 @@ public class TextRecognition {
                                     FirebaseVisionText.Element element = elements.get(k);
                                     Rect boxRect = element.getBoundingBox();
                                     if (isCursorOnBox(graphicOverlay, boxRect)) {
-                                        String text = adjustText(element.getText());
-                                        if (text != null) {
-                                            Log.i(TAG, "Text Detected: " + text);
-                                            graphicOverlay.changeBox(
-                                                    new BoundingBoxGraphic(graphicOverlay, boxRect));
-                                            listener.onRecognitionResult(text);
-                                        }
+                                        String text = element.getText();
+                                        Log.i(TAG, "Text Detected: " + text);
+                                        listener.onRecognitionResult(text, boxRect);
                                     }
                                 }
                             }
                         }
-
-                        graphicOverlay.postInvalidate();
                         processingImage = null;
                         processingImageSize = null;
                     }
@@ -127,9 +120,4 @@ public class TextRecognition {
         return false;
     }
 
-    private static String adjustText(String detectedText) {
-        String text = detectedText.replaceAll(SYMBOLS, "");
-        if (text.length() == 0) return null;
-        return text;
-    }
 }

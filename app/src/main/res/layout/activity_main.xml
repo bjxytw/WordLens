@@ -46,7 +46,7 @@
             android:background="@color/colorAccent"/>
 
         <ScrollView
-            android:id="@+id/meanScrollView"
+            android:id="@+id/dictionaryScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
