@@ -89,11 +89,13 @@ public class TextRecognition {
                                     FirebaseVisionText.Element element = elements.get(k);
                                     Rect boxRect = element.getBoundingBox();
                                     if (isCursorOnBox(graphicOverlay, boxRect)) {
-                                        graphicOverlay.changeBox(
-                                                new BoundingBoxGraphic(graphicOverlay, boxRect));
                                         String text = adjustText(element.getText());
-                                        Log.i(TAG, "Text Detected: " + text);
-                                        listener.onRecognitionResult(text);
+                                        if (text != null) {
+                                            Log.i(TAG, "Text Detected: " + text);
+                                            graphicOverlay.changeBox(
+                                                    new BoundingBoxGraphic(graphicOverlay, boxRect));
+                                            listener.onRecognitionResult(text);
+                                        }
                                     }
                                 }
                             }
@@ -125,8 +127,9 @@ public class TextRecognition {
         return false;
     }
 
-    private static String adjustText(String text) {
-        return text.replaceAll(SYMBOLS, "").toLowerCase();
+    private static String adjustText(String detectedText) {
+        String text = detectedText.replaceAll(SYMBOLS, "");
+        if (text.length() == 0) return null;
+        return text;
     }
-
 }

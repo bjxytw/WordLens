@@ -69,16 +69,16 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     public void onRecognitionResult(String text) {
-        String mean = null;
+        DictionarySearch.DictionaryData data = null;
 
         if (!text.equals(resultText.getText().toString())) {
             resultText.setText(text);
-            mean = dictionary.search(text);
+            data = dictionary.search(text);
         }
 
-        if (mean != null && !mean.equals(meanText.getText().toString())) {
-            headText.setText(text);
-            meanText.setText(mean);
+        if (data != null && !data.wordText().equals(headText.getText().toString())) {
+            headText.setText(data.wordText());
+            meanText.setText(data.meanText());
             meanScroll.scrollTo(0, 0);
         }
     }

@@ -5,7 +5,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 public class DictionarySearch {
-    private static final String SQL_SEARCH = "SELECT mean FROM items WHERE word=?";
+    private static final String SQL_SEARCH = "SELECT * FROM items WHERE word COLLATE nocase=?";
+    private static final String WORD_COL = "word";
     private static final String MEAN_COL = "mean";
     private SQLiteDatabase database;
 
@@ -14,22 +15,34 @@ public class DictionarySearch {
         database = helper.getReadableDatabase();
     }
 
-    public String search(String word) {
+    public DictionaryData search(String word) {
+        String wordText = null;
         StringBuilder meanText = new StringBuilder();
         Cursor dbCursor = database.rawQuery(SQL_SEARCH, new String[]{word});
         while (dbCursor.moveToNext()) {
+            wordText = dbCursor.getString(dbCursor.getColumnIndex(WORD_COL));
             meanText.append(dbCursor.getString(dbCursor.getColumnIndex(MEAN_COL))
                     .replace(" / ", "\n"));
             meanText.append("\n\n");
         }
         dbCursor.close();
 
-        if (meanText.length() > 0)
-            return meanText.toString();
-        return null;
+        if (wordText == null || meanText.length() == 0)
+            return null;
+        return new DictionaryData(wordText, meanText.toString());
     }
 
     public void close() {
         if (database != null) database.close();
+    }
+
+    public class DictionaryData {
+        private String word, mean;
+        DictionaryData(String word, String mean) {
+            this.word = word;
+            this.mean = mean;
+        }
+        public String wordText() {return word;}
+        public String meanText() {return mean;}
     }
 }

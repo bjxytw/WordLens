@@ -272,7 +272,6 @@ public class CameraSource {
 
                 try {
                     synchronized (processorLock) {
-
                         frameProcessor.process(data, size);
                     }
                 } catch (Throwable t) {
