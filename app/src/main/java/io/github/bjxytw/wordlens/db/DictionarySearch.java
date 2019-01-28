@@ -7,7 +7,7 @@ import android.util.Log;
 
 public class DictionarySearch {
     private static final String TAG = "DicSearch";
-    private static final String SYMBOLS = "[!?,.;:()\"]";
+    private static final String SYMBOLS = "[!-/:-@\\[-`{-~]";
     private static final String SQL_SEARCH = "SELECT * FROM items WHERE word COLLATE nocase=?";
     private static final String WORD_COL = "word";
     private static final String MEAN_COL = "mean";
@@ -23,14 +23,12 @@ public class DictionarySearch {
     }
 
     public DictionaryData search(String word)  {
-        String searchWord = removeSymbol(word.toLowerCase());
-        if (searchWord != null) {
-            DictionaryData result = searchFromSql(searchWord);
-            if (result == null) result = searchWithoutAbbreviation(searchWord);
-            if (result == null) result = searchBaseForm(searchWord);
-            return result;
-        }
-        return null;
+        String searchWord = word.toLowerCase();
+        DictionaryData result = searchFromSql(searchWord);
+        if (result == null) result = searchWithoutSymbol(searchWord);
+        if (result == null) result = searchWithoutAbbreviation(searchWord);
+        if (result == null) result = searchBaseForm(searchWord);
+        return result;
     }
 
     private DictionaryData searchFromSql(String searchWord) {
@@ -50,6 +48,12 @@ public class DictionarySearch {
         if (wordText == null || meanText.length() == 0)
             return null;
         return new DictionaryData(wordText, meanText.toString());
+    }
+
+    private DictionaryData searchWithoutSymbol(String detectedText) {
+        String text = detectedText.replaceAll(SYMBOLS, "");
+        if (text.length() == 0) return null;
+        return searchFromSql(text);
     }
 
     private DictionaryData searchWithoutAbbreviation(String word) {
@@ -110,12 +114,6 @@ public class DictionarySearch {
                     return wordEnd;
         }
         return null;
-    }
-
-    private static String removeSymbol(String detectedText) {
-        String text = detectedText.replaceAll(SYMBOLS, "");
-        if (text.length() == 0) return null;
-        return text;
     }
 
     private class SubStringBack {
