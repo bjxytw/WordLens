@@ -23,12 +23,14 @@ public class DictionarySearch {
     }
 
     public DictionaryData search(String word)  {
-        String searchWord = word.toLowerCase();
-        DictionaryData result = searchFromSql(searchWord);
-        if (result == null) result = searchWithoutSymbol(searchWord);
-        if (result == null) result = searchWithoutAbbreviation(searchWord);
-        if (result == null) result = searchBaseForm(searchWord);
-        return result;
+        String searchWord = removeEndSymbol(word.toLowerCase());
+        if (searchWord != null) {
+            DictionaryData result = searchFromSql(searchWord);
+            if (result == null) result = searchWithoutAbbreviation(searchWord);
+            if (result == null) result = searchBaseForm(searchWord);
+            return result;
+        }
+        return null;
     }
 
     private DictionaryData searchFromSql(String searchWord) {
@@ -50,16 +52,14 @@ public class DictionarySearch {
         return new DictionaryData(wordText, meanText.toString());
     }
 
-    private DictionaryData searchWithoutSymbol(String detectedText) {
-        String text = detectedText.replaceAll(SYMBOLS, "");
-        if (text.length() == 0) return null;
-        return searchFromSql(text);
-    }
-
     private DictionaryData searchWithoutAbbreviation(String word) {
+        int slashIndex = word.indexOf("/");
         int abbreviationIndex = word.lastIndexOf("'");
-        if (abbreviationIndex == -1) return null;
-        return searchFromSql(word.substring(0, abbreviationIndex));
+        if (slashIndex != -1)
+            return searchFromSql(word.substring(0, slashIndex));
+        if (abbreviationIndex != -1)
+            return searchFromSql(word.substring(0, abbreviationIndex));
+        return null;
     }
 
     private DictionaryData searchBaseForm(String word) {
@@ -116,6 +116,23 @@ public class DictionarySearch {
         return null;
     }
 
+    private static String removeEndSymbol(String text) {
+        int size = text.length();
+        if (size > 1 && text.substring(size - 1).matches(SYMBOLS))
+            return text.substring(0, size - 1);
+        return text;
+    }
+
+    public class DictionaryData {
+        private final String word, mean;
+        DictionaryData(String word, String mean) {
+            this.word = word;
+            this.mean = mean;
+        }
+        public String wordText() { return word; }
+        public String meanText() { return mean; }
+    }
+
     private class SubStringBack {
         private final String word;
         private final int size;
@@ -139,16 +156,6 @@ public class DictionarySearch {
             }
             return null;
         }
-    }
-
-    public class DictionaryData {
-        private final String word, mean;
-        DictionaryData(String word, String mean) {
-            this.word = word;
-            this.mean = mean;
-        }
-        public String wordText() { return word; }
-        public String meanText() { return mean; }
     }
 
     private enum WordEnd {
