@@ -15,7 +15,6 @@ import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
-import io.github.bjxytw.wordlens.graphic.BoundingBoxGraphic;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,7 +32,7 @@ public class TextRecognition {
     private Size processingImageSize;
 
     public interface TextRecognitionListener {
-        void onRecognitionResult(String result, Rect boundingBox);
+        void onRecognitionResult(String result);
     }
 
     public TextRecognition(GraphicOverlay overlay) {
@@ -86,11 +85,10 @@ public class TextRecognition {
                                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                                 for (int k = 0; k < elements.size(); k++) {
                                     FirebaseVisionText.Element element = elements.get(k);
-                                    Rect boxRect = element.getBoundingBox();
-                                    if (isCursorOnBox(graphicOverlay, boxRect)) {
+                                    if (isCursorOnBox(graphicOverlay, element.getBoundingBox())) {
                                         String text = element.getText();
                                         Log.i(TAG, "Text Detected: " + text);
-                                        listener.onRecognitionResult(text, boxRect);
+                                        listener.onRecognitionResult(text);
                                     }
                                 }
                             }

@@ -161,21 +161,23 @@ public class CameraSource {
     }
 
     public void setCameraFocus() {
-        Camera.Parameters parameters = camera.getParameters();
-        Rect rect = graphicOverlay.getCursorRect();
+        if (camera != null) {
+            Camera.Parameters parameters = camera.getParameters();
+            Rect rect = graphicOverlay.getCursorRect();
 
-        if (supportedAutoFocus && parameters != null && rect != null) {
-            List<Camera.Area> focusArea = new ArrayList<>();
-            focusArea.add(new Camera.Area(rect, 1));
-            parameters.setFocusAreas(focusArea);
+            if (supportedAutoFocus && parameters != null && rect != null) {
+                List<Camera.Area> focusArea = new ArrayList<>();
+                focusArea.add(new Camera.Area(rect, 1));
+                parameters.setFocusAreas(focusArea);
 
-            camera.setParameters(parameters);
-            camera.autoFocus(new Camera.AutoFocusCallback() {
-                @Override
-                public void onAutoFocus(boolean success, Camera camera) {
-                    Log.d(TAG, "onAutoFocus: " + success);
-                }
-            });
+                camera.setParameters(parameters);
+                camera.autoFocus(new Camera.AutoFocusCallback() {
+                    @Override
+                    public void onAutoFocus(boolean success, Camera camera) {
+                        Log.d(TAG, "onAutoFocus: " + success);
+                    }
+                });
+            }
         }
     }
 

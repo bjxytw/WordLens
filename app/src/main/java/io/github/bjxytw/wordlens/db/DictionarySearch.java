@@ -5,6 +5,39 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+enum WordEnd {
+    IED("ied"),
+    IES("ies"),
+    IER("ier"),
+    IEST("iest"),
+    ING("ing"),
+    ED("ed"),
+    ER("er"),
+    EST("est"),
+    ES("es"),
+    S("s");
+    private final String text;
+    private final int size;
+    WordEnd(final String text) {
+        this.text = text;
+        size = text.length();
+    }
+    String getText() { return text; }
+    int getSize() { return size; }
+    static int getMaxSize() {
+        int max = 0;
+        for (WordEnd wordEnd : values())
+            if (wordEnd.getSize() > max) max = wordEnd.size;
+        return max;
+    }
+    static int getMinSize() {
+        int min = Integer.MAX_VALUE;
+        for (WordEnd wordEnd : values())
+            if (wordEnd.getSize() < min) min = wordEnd.size;
+        return min;
+    }
+}
+
 public class DictionarySearch {
     private static final String TAG = "DicSearch";
     private static final String SYMBOLS = "[!-/:-@\\[-`{-~]";
@@ -23,7 +56,7 @@ public class DictionarySearch {
     }
 
     public DictionaryData search(String word)  {
-        String searchWord = removeEndSymbol(word.toLowerCase());
+        String searchWord = removeBothEndSymbol(word.toLowerCase());
         if (searchWord != null) {
             DictionaryData result = searchFromSql(searchWord);
             if (result == null) result = searchWithoutAbbreviation(searchWord);
@@ -53,18 +86,14 @@ public class DictionarySearch {
     }
 
     private DictionaryData searchWithoutAbbreviation(String word) {
-        int slashIndex = word.indexOf("/");
         int abbreviationIndex = word.lastIndexOf("'");
-        if (slashIndex != -1)
-            return searchFromSql(word.substring(0, slashIndex));
         if (abbreviationIndex != -1)
             return searchFromSql(word.substring(0, abbreviationIndex));
         return null;
     }
 
     private DictionaryData searchBaseForm(String word) {
-        SubStringBack sub = new SubStringBack(word);
-        WordEnd wordEnd = detectWordEnd(sub);
+        WordEnd wordEnd = detectWordEnd(word);
         if (wordEnd != null) {
             StringBuilder searchWord = new StringBuilder();
             switch (wordEnd) {
@@ -72,24 +101,24 @@ public class DictionarySearch {
                 case IES:
                 case IER:
                 case IEST:
-                    searchWord.append(sub.first(wordEnd.getSize()));
+                    searchWord.append(subStringFirst(word, wordEnd.getSize()));
                     searchWord.append('y');
                     return searchFromSql(searchWord.toString());
                 case ING:
                 case ED:
                 case ER:
-                case ST:
-                    Character consecutiveLetter =
-                            sub.compareLetter(wordEnd.getSize() + 1, wordEnd.getSize() + 2);
+                case EST:
+                    Character consecutiveLetter = compareLetter(word,
+                            wordEnd.getSize() + 1, wordEnd.getSize() + 2);
                     if (consecutiveLetter != null) {
-                        searchWord.append(sub.first(wordEnd.getSize() + 2));
+                        searchWord.append(subStringFirst(word, wordEnd.getSize() + 2));
                         searchWord.append(consecutiveLetter);
                         DictionaryData result = searchFromSql(searchWord.toString());
                         if (result != null) return result;
                         else searchWord.setLength(0);
                     }
                 case ES:
-                    searchWord.append(sub.first(wordEnd.getSize()));
+                    searchWord.append(subStringFirst(word, wordEnd.getSize()));
                     searchWord.append('e');
                     DictionaryData result = searchFromSql(searchWord.toString());
                     if (result == null) {
@@ -98,29 +127,67 @@ public class DictionarySearch {
                     }
                     return result;
                 case S:
-                    searchWord.append(sub.first(wordEnd.getSize()));
+                    searchWord.append(subStringFirst(word, wordEnd.getSize()));
                     return searchFromSql(searchWord.toString());
             }
         }
         return null;
     }
 
-    private WordEnd detectWordEnd(SubStringBack sub) {
+    private WordEnd detectWordEnd(String word) {
         String end;
         for (int i = WordEnd.getMaxSize(); i >= WordEnd.getMinSize(); i--) {
-            end = sub.last(i);
-            for (WordEnd wordEnd : WordEnd.values())
-                if (end != null && end.equals(wordEnd.getText()))
-                    return wordEnd;
+            end = subStringLast(word, i);
+            if (end != null) {
+                for (WordEnd wordEnd : WordEnd.values()) {
+                    if (end.equals(wordEnd.getText()))
+                        return wordEnd;
+                }
+            }
         }
         return null;
     }
 
-    private static String removeEndSymbol(String text) {
+    private static String subStringFirst(String word, int backWardIndex) {
+        int size = word.length();
+        if (backWardIndex < size)
+            return word.substring(0, size - backWardIndex);
+        return null;
+    }
+
+    private static String subStringLast(String word, int backWardIndex) {
+        int size = word.length();
+        if (backWardIndex < size)
+            return word.substring(size - backWardIndex);
+        return null;
+    }
+
+    private static Character compareLetter(String word, int backWardIndex1, int backWardIndex2) {
+        int size = word.length();
+        if (backWardIndex1 < size && backWardIndex2 < size) {
+            char char1 = word.charAt(size - backWardIndex1);
+            char char2 = word.charAt(size - backWardIndex2);
+            if (char1 == char2) return char1;
+        }
+        return null;
+    }
+
+    public static String removeBothEndSymbol(String text) {
         int size = text.length();
-        if (size > 1 && text.substring(size - 1).matches(SYMBOLS))
-            return text.substring(0, size - 1);
-        return text;
+        int begin = 0;
+        int end = size;
+
+        if (size <= 1) return text;
+
+        if (text.substring(0, 1).matches(SYMBOLS))
+            begin = 1;
+        if (text.substring(size - 1).matches(SYMBOLS))
+            end = size - 1;
+
+        if (end - begin > 0)
+            return text.substring(begin, end);
+
+        return null;
     }
 
     public class DictionaryData {
@@ -131,65 +198,5 @@ public class DictionarySearch {
         }
         public String wordText() { return word; }
         public String meanText() { return mean; }
-    }
-
-    private class SubStringBack {
-        private final String word;
-        private final int size;
-        SubStringBack(String word) {
-            this.word = word;
-            size = word.length();
-        }
-        String first(int index) {
-            if (index < size) return word.substring(0, size - index);
-            return null;
-        }
-        String last(int index) {
-            if (index < size) return word.substring(size - index);
-            return null;
-        }
-        Character compareLetter(int index1, int index2) {
-            if (index1 < size && index2 < size) {
-                char char1 = word.charAt(size - index1);
-                char char2 = word.charAt(size - index2);
-                if (char1 == char2) return char1;
-            }
-            return null;
-        }
-    }
-
-    private enum WordEnd {
-        IED("ied"),
-        IES("ies"),
-        IER("ier"),
-        IEST("iest"),
-        ING("ing"),
-        ED("ed"),
-        ER("er"),
-        ST("st"),
-        ES("es"),
-        S("s");
-        private final String text;
-        private final int size;
-        WordEnd(final String text) {
-            this.text = text;
-            size = text.length();
-        }
-        private String getText() { return text; }
-
-        private int getSize() { return size; }
-
-        private static int getMaxSize() {
-            int max = 0;
-            for (WordEnd wordEnd : values())
-                if (wordEnd.getSize() > max) max = wordEnd.size;
-            return max;
-        }
-        private static int getMinSize() {
-            int min = Integer.MAX_VALUE;
-            for (WordEnd wordEnd : values())
-                if (wordEnd.getSize() < min) min = wordEnd.size;
-            return min;
-        }
     }
 }
