@@ -24,18 +24,6 @@ enum WordEnd {
     }
     String getText() { return text; }
     int getSize() { return size; }
-    static int getMaxSize() {
-        int max = 0;
-        for (WordEnd wordEnd : values())
-            if (wordEnd.getSize() > max) max = wordEnd.size;
-        return max;
-    }
-    static int getMinSize() {
-        int min = Integer.MAX_VALUE;
-        for (WordEnd wordEnd : values())
-            if (wordEnd.getSize() < min) min = wordEnd.size;
-        return min;
-    }
 }
 
 public class DictionarySearch {
@@ -135,15 +123,10 @@ public class DictionarySearch {
     }
 
     private WordEnd detectWordEnd(String word) {
-        String end;
-        for (int i = WordEnd.getMaxSize(); i >= WordEnd.getMinSize(); i--) {
-            end = subStringLast(word, i);
-            if (end != null) {
-                for (WordEnd wordEnd : WordEnd.values()) {
-                    if (end.equals(wordEnd.getText()))
-                        return wordEnd;
-                }
-            }
+        for (WordEnd wordEnd : WordEnd.values()) {
+            String end = subStringLast(word, wordEnd.getSize());
+            if (end != null && end.equals(wordEnd.getText()))
+                return wordEnd;
         }
         return null;
     }
@@ -174,19 +157,17 @@ public class DictionarySearch {
 
     public static String removeBothEndSymbol(String text) {
         int size = text.length();
-        int begin = 0;
-        int end = size;
+        if (size > 0) {
+            int begin = 0;
+            int end = size;
+            if (text.substring(0, 1).matches(SYMBOLS))
+                begin = 1;
+            if (text.substring(size - 1).matches(SYMBOLS))
+                end = size - 1;
 
-        if (size <= 1) return text;
-
-        if (text.substring(0, 1).matches(SYMBOLS))
-            begin = 1;
-        if (text.substring(size - 1).matches(SYMBOLS))
-            end = size - 1;
-
-        if (end - begin > 0)
-            return text.substring(begin, end);
-
+            if (end - begin > 0)
+                return text.substring(begin, end);
+        }
         return null;
     }
 

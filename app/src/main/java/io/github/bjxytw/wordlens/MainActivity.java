@@ -1,9 +1,10 @@
 package io.github.bjxytw.wordlens;
 
-import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,8 +31,8 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+        super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
@@ -99,24 +100,24 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     public void onResume() {
-        super.onResume();
         Log.d(TAG, "onResume");
+        super.onResume();
         startCameraSource();
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
         Log.d(TAG, "onPause");
         preview.stop();
+        super.onPause();
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy");
         if (camera != null) camera.release();
         if (dictionary != null) dictionary.close();
+        super.onDestroy();
     }
 
 }
