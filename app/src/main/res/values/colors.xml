@@ -7,7 +7,10 @@
     <color name="colorOverlay">#80323232</color>
     <color name="colorPrimaryText">#212121</color>
     <color name="colorSecondaryText">#757575</color>
-    <color name="colorFAB">#804197A2</color>
+    <color name="colorButtonIcon">#99000000</color>
+    <color name="colorClickedButtonIcon">#9900BCD4</color>
+    <color name="colorButtonBackground">#99FFFFFF</color>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
 </resources>

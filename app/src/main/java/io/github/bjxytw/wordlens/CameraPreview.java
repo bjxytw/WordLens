@@ -20,7 +20,7 @@ public class CameraPreview extends SurfaceView {
 
     private boolean startRequested;
     private boolean surfaceAvailable;
-    private CameraSource cameraSource;
+    private CameraSource camera;
     private GraphicOverlay overlay;
 
     public CameraPreview(Context context, AttributeSet attrs) {
@@ -30,14 +30,13 @@ public class CameraPreview extends SurfaceView {
         getHolder().addCallback(new SurfaceCallback());
     }
 
-    public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
-        if (cameraSource == null)
-            stop();
+    public void start(CameraSource camera, GraphicOverlay overlay) throws IOException {
+        if (camera == null) stop();
 
-        this.cameraSource = cameraSource;
+        this.camera = camera;
         this.overlay = overlay;
 
-        if (this.cameraSource != null) {
+        if (this.camera != null) {
             startRequested = true;
             startIfReady();
         }
@@ -46,32 +45,32 @@ public class CameraPreview extends SurfaceView {
     @SuppressLint("MissingPermission")
     private void startIfReady() throws IOException {
         if (startRequested && surfaceAvailable) {
-            cameraSource.start(getHolder());
+            camera.start(getHolder());
             requestLayout();
             startRequested = false;
         }
     }
 
     public void stop() {
-        if (cameraSource != null)
-            cameraSource.stop();
+        if (camera != null)
+            camera.stop();
     }
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        if (cameraSource != null &&
+        if (camera != null &&
                 event.getX() < overlay.getWidth() && event.getY() < overlay.getHeight())
-            cameraSource.setCameraFocus();
+            camera.setCameraFocus();
         return true;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (cameraSource != null) {
-            Size size = cameraSource.getSize();
+        if (camera != null) {
+            Size size = camera.getSize();
             if (size != null) {
                 int width = MeasureSpec.getSize(widthMeasureSpec);
                 int height = MeasureSpec.getSize(heightMeasureSpec);

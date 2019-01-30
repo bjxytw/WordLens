@@ -10,7 +10,7 @@
     <io.github.bjxytw.wordlens.CameraPreview
         android:id="@+id/cameraPreview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
 
     <io.github.bjxytw.wordlens.graphic.GraphicOverlay
         android:id="@+id/graphicOverlay"
@@ -18,26 +18,49 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/meanPreview"/>
 
+    <ImageButton
+        android:id="@+id/flashButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/pauseButton"
+        android:layout_alignEnd="@id/pauseButton"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/button_background"
+        android:contentDescription="@null"/>
+
+    <ImageButton
+        android:id="@+id/pauseButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/toolOverlay"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="6dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background"
+        android:contentDescription="@null"/>
+
     <RelativeLayout
         android:id="@+id/toolOverlay"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="48dp"
         android:layout_alignBottom="@+id/graphicOverlay"
         android:background="@color/colorOverlay">
         <TextView
             android:id="@+id/resultText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:gravity="center_vertical"
             android:text="@string/text"
             android:textSize="24sp"
             android:textColor="@color/white"/>
+
     </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/meanPreview"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="240dp"
         android:background="@color/colorPrimaryLight"
         android:layout_alignParentBottom="true">
         <View

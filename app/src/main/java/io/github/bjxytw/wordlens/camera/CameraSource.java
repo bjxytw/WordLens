@@ -48,6 +48,8 @@ public class CameraSource {
     private Size size;
 
     private boolean supportedAutoFocus;
+    private boolean supportedFlash;
+    private boolean flashed;
 
     public CameraSource(GraphicOverlay overlay, TextRecognition frameProcessor) {
         graphicOverlay = overlay;
@@ -146,6 +148,14 @@ public class CameraSource {
             Log.i(TAG, "Camera auto focus is not supported on this device.");
         }
 
+        if (parameters.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+            supportedFlash = true;
+            if (flashed) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        } else {
+            supportedFlash = false;
+            Log.i(TAG, "Camera flash is not supported on this device.");
+        }
+
         camera.setParameters(parameters);
 
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
@@ -160,7 +170,7 @@ public class CameraSource {
         return camera;
     }
 
-    public void setCameraFocus() {
+    public synchronized void setCameraFocus() {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             Rect rect = graphicOverlay.getCursorRect();
@@ -169,7 +179,6 @@ public class CameraSource {
                 List<Camera.Area> focusArea = new ArrayList<>();
                 focusArea.add(new Camera.Area(rect, 1));
                 parameters.setFocusAreas(focusArea);
-
                 camera.setParameters(parameters);
                 camera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
@@ -177,6 +186,18 @@ public class CameraSource {
                         Log.d(TAG, "onAutoFocus: " + success);
                     }
                 });
+            }
+        }
+    }
+
+    public synchronized void setCameraFlash(boolean on){
+        if (camera != null) {
+            Camera.Parameters parameters = camera.getParameters();
+            if (supportedFlash && parameters != null) {
+                if (on) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                else parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                camera.setParameters(parameters);
+                flashed = on;
             }
         }
     }

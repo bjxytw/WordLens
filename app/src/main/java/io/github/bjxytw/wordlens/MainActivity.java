@@ -4,7 +4,9 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,10 +26,14 @@ public final class MainActivity extends AppCompatActivity
     private TextRecognition textRecognition;
     private DictionarySearch dictionary;
     private GraphicOverlay graphicOverlay;
+    private ImageButton pauseButton;
+    private ImageButton flashButton;
     private TextView resultTextView;
     private TextView headTextView;
     private TextView meanTextView;
     private ScrollView dictionaryScroll;
+    private boolean paused;
+    private boolean flashed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,10 +44,16 @@ public final class MainActivity extends AppCompatActivity
 
         preview = findViewById(R.id.cameraPreview);
         graphicOverlay = findViewById(R.id.graphicOverlay);
+        pauseButton = findViewById(R.id.pauseButton);
+        flashButton = findViewById(R.id.flashButton);
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
         dictionaryScroll = findViewById(R.id.dictionaryScrollView);
+
+        ButtonClick buttonListener = new ButtonClick();
+        pauseButton.setOnClickListener(buttonListener);
+        flashButton.setOnClickListener(buttonListener);
 
         textRecognition = new TextRecognition(graphicOverlay);
         textRecognition.setListener(this);
@@ -102,6 +114,8 @@ public final class MainActivity extends AppCompatActivity
     public void onResume() {
         Log.d(TAG, "onResume");
         super.onResume();
+        setPause(false);
+        setFlash(flashed);
         startCameraSource();
     }
 
@@ -120,4 +134,33 @@ public final class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
+    private void setPause(boolean pause) {
+        if (pause) pauseButton.setImageResource(R.drawable.ic_play_arrow);
+        else pauseButton.setImageResource(R.drawable.ic_pause);
+        paused = pause;
+    }
+
+    private void setFlash(boolean on) {
+        if (on) flashButton.setImageResource(R.drawable.ic_highlight_on);
+        else flashButton.setImageResource(R.drawable.ic_highlight_off);
+        flashed = on;
+    }
+
+    private class ButtonClick implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.pauseButton:
+                    if (!paused) preview.stop();
+                    else startCameraSource();
+                    setPause(!paused);
+                    break;
+                case R.id.flashButton:
+                    if (camera != null && !paused) {
+                        camera.setCameraFlash(!flashed);
+                        setFlash(!flashed);
+                    }
+            }
+        }
+    }
 }
