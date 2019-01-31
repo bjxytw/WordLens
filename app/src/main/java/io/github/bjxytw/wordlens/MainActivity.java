@@ -1,11 +1,10 @@
 package io.github.bjxytw.wordlens;
 
-import android.graphics.Typeface;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
+import io.github.bjxytw.wordlens.graphic.BoundingBoxGraphic;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 import io.github.bjxytw.wordlens.processor.TextRecognition;
 
@@ -81,15 +81,20 @@ public final class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onRecognitionResult(String resultText) {
-        String text = DictionarySearch.removeBothEndSymbol(resultText);
-        if (text != null && !text.equals(resultTextView.getText().toString())) {
-            resultTextView.setText(text);
-            DictionarySearch.DictionaryData data = dictionary.search(text);
-            if (data != null && !data.wordText().equals(headTextView.getText().toString())) {
-                headTextView.setText(data.wordText());
-                meanTextView.setText(data.meanText());
-                dictionaryScroll.scrollTo(0, 0);
+    public void onRecognitionResult(String resultText, Rect boundingBox) {
+        if (!paused) {
+            graphicOverlay.addBox(new BoundingBoxGraphic(graphicOverlay, boundingBox));
+            graphicOverlay.postInvalidate();
+
+            String text = DictionarySearch.removeBothEndSymbol(resultText);
+            if (text != null && !text.equals(resultTextView.getText().toString())) {
+                resultTextView.setText(text);
+                DictionarySearch.DictionaryData data = dictionary.search(text);
+                if (data != null && !data.wordText().equals(headTextView.getText().toString())) {
+                    headTextView.setText(data.wordText());
+                    meanTextView.setText(data.meanText());
+                    dictionaryScroll.scrollTo(0, 0);
+                }
             }
         }
     }

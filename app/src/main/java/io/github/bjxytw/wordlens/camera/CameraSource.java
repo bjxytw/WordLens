@@ -50,6 +50,7 @@ public class CameraSource {
     private boolean supportedAutoFocus;
     private boolean supportedFlash;
     private boolean flashed;
+    private List<Camera.Area> focusArea;
 
     public CameraSource(GraphicOverlay overlay, TextRecognition frameProcessor) {
         graphicOverlay = overlay;
@@ -65,7 +66,6 @@ public class CameraSource {
         camera = createCamera();
         camera.setPreviewDisplay(surfaceHolder);
         camera.startPreview();
-        setCameraFocus();
 
         processingThread = new Thread(processingRunnable);
         processingRunnable.setActive(true);
@@ -173,11 +173,7 @@ public class CameraSource {
     public synchronized void setCameraFocus() {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
-            Rect rect = graphicOverlay.getCursorRect();
-
-            if (supportedAutoFocus && parameters != null && rect != null) {
-                List<Camera.Area> focusArea = new ArrayList<>();
-                focusArea.add(new Camera.Area(rect, 1));
+            if (focusArea != null && parameters != null) {
                 parameters.setFocusAreas(focusArea);
                 camera.setParameters(parameters);
                 camera.autoFocus(new Camera.AutoFocusCallback() {
@@ -200,6 +196,22 @@ public class CameraSource {
                 flashed = on;
             }
         }
+    }
+
+    public void setCameraFocusArea() {
+        Rect rect = graphicOverlay.getCameraCursorRect();
+        if (supportedAutoFocus && rect != null) {
+            focusArea = new ArrayList<>();
+            focusArea.add(new Camera.Area(
+                    new Rect(calculateFocusPoint(rect.left, size.getWidth()),
+                            calculateFocusPoint(rect.top, size.getHeight()),
+                            calculateFocusPoint(rect.right, size.getWidth()),
+                            calculateFocusPoint(rect.bottom, size.getHeight())), 1));
+        }
+    }
+
+    private static int calculateFocusPoint(int point, int cameraSize) {
+        return point * 2000 / cameraSize - 1000;
     }
 
     private static int getIdForRequestedCamera() {

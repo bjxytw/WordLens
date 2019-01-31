@@ -52,8 +52,8 @@ public class CameraPreview extends SurfaceView {
     }
 
     public void stop() {
-        if (camera != null)
-            camera.stop();
+        if (overlay != null) overlay.clearBox();
+        if (camera != null) camera.stop();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -83,8 +83,10 @@ public class CameraPreview extends SurfaceView {
                 }
 
                 if (overlay != null) {
-                    overlay.setScale(cameraWidth, cameraHeight, width, height);
                     overlay.clearBox();
+                    overlay.setScale(cameraWidth, cameraHeight, width, height);
+                    camera.setCameraFocusArea();
+                    camera.setCameraFocus();
                 }
             }
         }

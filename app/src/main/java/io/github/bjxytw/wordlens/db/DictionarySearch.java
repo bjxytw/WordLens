@@ -5,26 +5,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-enum WordEnd {
-    IED("ied"),
-    IES("ies"),
-    IER("ier"),
-    IEST("iest"),
-    ING("ing"),
-    ED("ed"),
-    ER("er"),
-    EST("est"),
-    ES("es"),
-    S("s");
-    private final String text;
-    private final int size;
-    WordEnd(final String text) {
-        this.text = text;
-        size = text.length();
-    }
-    String getText() { return text; }
-    int getSize() { return size; }
-}
 
 public class DictionarySearch {
     private static final String TAG = "DicSearch";
@@ -81,7 +61,7 @@ public class DictionarySearch {
     }
 
     private DictionaryData searchBaseForm(String word) {
-        WordEnd wordEnd = detectWordEnd(word);
+        WordEndEnum wordEnd = detectWordEnd(word);
         if (wordEnd != null) {
             StringBuilder searchWord = new StringBuilder();
             switch (wordEnd) {
@@ -122,8 +102,8 @@ public class DictionarySearch {
         return null;
     }
 
-    private WordEnd detectWordEnd(String word) {
-        for (WordEnd wordEnd : WordEnd.values()) {
+    private WordEndEnum detectWordEnd(String word) {
+        for (WordEndEnum wordEnd : WordEndEnum.values()) {
             String end = subStringLast(word, wordEnd.getSize());
             if (end != null && end.equals(wordEnd.getText()))
                 return wordEnd;

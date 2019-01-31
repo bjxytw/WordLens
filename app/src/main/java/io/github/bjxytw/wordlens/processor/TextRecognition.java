@@ -1,6 +1,7 @@
 package io.github.bjxytw.wordlens.processor;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -32,7 +33,7 @@ public class TextRecognition {
     private Size processingImageSize;
 
     public interface TextRecognitionListener {
-        void onRecognitionResult(String result);
+        void onRecognitionResult(String result, Rect boundingBox);
     }
 
     public TextRecognition(GraphicOverlay overlay) {
@@ -76,25 +77,7 @@ public class TextRecognition {
                 .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
-                        graphicOverlay.clearBox();
-
-                        List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
-                        for (int i = 0; i < blocks.size(); i++) {
-                            List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
-                            for (int j = 0; j < lines.size(); j++) {
-                                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
-                                for (int k = 0; k < elements.size(); k++) {
-                                    FirebaseVisionText.Element element = elements.get(k);
-                                    if (isCursorOnBox(graphicOverlay, element.getBoundingBox())) {
-                                        String text = element.getText();
-                                        Log.i(TAG, "Text Detected: " + text);
-                                        listener.onRecognitionResult(text);
-                                    }
-                                }
-                            }
-                        }
-                        processingImage = null;
-                        processingImageSize = null;
+                        processResult(results);
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -105,15 +88,37 @@ public class TextRecognition {
                 });
     }
 
-    private static boolean isCursorOnBox(GraphicOverlay overlay, Rect box) {
-        Rect cursor = overlay.getCursorRect();
+    private void processResult(FirebaseVisionText results) {
+        FirebaseVisionText.Element detectedElement = null;
+        graphicOverlay.clearBox();
+        List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
+        for (int i = 0; i < blocks.size(); i++) {
+            List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
+            for (int j = 0; j < lines.size(); j++) {
+                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+                for (int k = 0; k < elements.size(); k++) {
+                    FirebaseVisionText.Element element = elements.get(k);
+                    if (isCursorOnBox(graphicOverlay.getCameraCursorRect(),
+                            element.getBoundingBox()))
+                        detectedElement = element;
+                }
+            }
+        }
+        if (detectedElement != null) {
+            String text = detectedElement.getText();
+            Log.i(TAG, "Text Detected: " + text);
+            listener.onRecognitionResult(text, detectedElement.getBoundingBox());
+        }
 
+        processingImage = null;
+        processingImageSize = null;
+    }
+
+    private static boolean isCursorOnBox(Rect cursor, Rect box) {
         if (cursor != null && box != null) {
             float x = cursor.centerX();
             float y = cursor.centerY();
-
-            return x > overlay.translateX(box.left) && y > overlay.translateY(box.top)
-                    && x < overlay.translateX(box.right) && y < overlay.translateY(box.bottom);
+            return x > box.left && y > box.top && x < box.right && y < box.bottom;
         }
         return false;
     }

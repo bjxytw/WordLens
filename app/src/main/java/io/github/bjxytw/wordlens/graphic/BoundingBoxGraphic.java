@@ -9,7 +9,7 @@ import android.graphics.RectF;
 
 public class BoundingBoxGraphic {
     private static final int BOX_COLOR = Color.WHITE;
-    private static final float STROKE_WIDTH = 4.0f;
+    private static final float STROKE_WIDTH = 3.0f;
 
     private final Paint rectPaint;
     private final GraphicOverlay overlay;
