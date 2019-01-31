@@ -62,7 +62,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 output.write(buffer, 0, size);
             Log.i(TAG, "Copied database from assets.");
         }
-        //Files.copy(InputStream, Path); requires api 26
         databaseExist = true;
         return super.getWritableDatabase();
     }

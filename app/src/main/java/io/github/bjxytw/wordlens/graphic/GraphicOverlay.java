@@ -16,6 +16,7 @@ import java.util.List;
 
 public class GraphicOverlay extends View {
     private static final int CURSOR_COLOR = Color.CYAN;
+    private static final int CURSOR_FOCUSING_COLOR = Color.YELLOW;
     private static final int CURSOR_AREA_SIZE = 50;
     private static final float CURSOR_STROKE_WIDTH = 4.0f;
 
@@ -45,9 +46,9 @@ public class GraphicOverlay extends View {
                 });
 
         cursorPaint = new Paint();
-        cursorPaint.setColor(CURSOR_COLOR);
         cursorPaint.setStyle(Paint.Style.STROKE);
         cursorPaint.setStrokeWidth(CURSOR_STROKE_WIDTH);
+        setFocusing(false);
     }
 
     public void clearBox() {
@@ -61,6 +62,11 @@ public class GraphicOverlay extends View {
         synchronized (lock) {
             boundingBoxList.add(boundingBox);
         }
+    }
+
+    public void setFocusing(boolean focusing) {
+        if (focusing) cursorPaint.setColor(CURSOR_FOCUSING_COLOR);
+        else cursorPaint.setColor(CURSOR_COLOR);
     }
 
     public void setScale (int cameraWidth, int cameraHeight,

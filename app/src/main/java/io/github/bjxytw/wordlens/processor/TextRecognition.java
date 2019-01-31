@@ -1,7 +1,6 @@
 package io.github.bjxytw.wordlens.processor;
 
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.util.Log;
 

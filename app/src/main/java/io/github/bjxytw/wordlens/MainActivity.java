@@ -162,8 +162,16 @@ public final class MainActivity extends AppCompatActivity
                     break;
                 case R.id.flashButton:
                     if (camera != null && !paused) {
-                        camera.setCameraFlash(!flashed);
-                        setFlash(!flashed);
+                        if (!flashed) {
+                            if (camera.cameraFlash(true))
+                                setFlash(true);
+                            else Toast.makeText(MainActivity.this,
+                                    getString(R.string.flash_not_supported),
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            camera.cameraFlash(false);
+                            setFlash(false);
+                        }
                     }
             }
         }

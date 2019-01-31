@@ -54,7 +54,6 @@ public class CameraSource {
 
     public CameraSource(GraphicOverlay overlay, TextRecognition frameProcessor) {
         graphicOverlay = overlay;
-        graphicOverlay.clearBox();
         processingRunnable = new FrameProcessingRunnable();
         this.frameProcessor = frameProcessor;
     }
@@ -94,15 +93,12 @@ public class CameraSource {
             camera.release();
             camera = null;
         }
-
         bytesToByteBuffer.clear();
     }
 
     public void release() {
         synchronized (processorLock) {
             stop();
-            graphicOverlay.clearBox();
-
             if (frameProcessor != null)
                 frameProcessor.stop();
         }
@@ -170,23 +166,25 @@ public class CameraSource {
         return camera;
     }
 
-    public synchronized void setCameraFocus() {
+    public synchronized void cameraFocus() {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             if (focusArea != null && parameters != null) {
+                graphicOverlay.setFocusing(true);
                 parameters.setFocusAreas(focusArea);
                 camera.setParameters(parameters);
                 camera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
                         Log.d(TAG, "onAutoFocus: " + success);
+                        graphicOverlay.setFocusing(false);
                     }
                 });
             }
         }
     }
 
-    public synchronized void setCameraFlash(boolean on){
+    public synchronized boolean cameraFlash(boolean on){
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             if (supportedFlash && parameters != null) {
@@ -194,8 +192,10 @@ public class CameraSource {
                 else parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
                 camera.setParameters(parameters);
                 flashed = on;
+                return true;
             }
         }
+        return false;
     }
 
     public void setCameraFocusArea() {

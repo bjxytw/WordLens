@@ -2,4 +2,5 @@
     <string name="app_name">Word Lens</string>
     <string name="text">Now recognizing..</string>
     <string name="permission_request">アプリを開始できません。\n権限を許可して下さい。</string>
+    <string name="flash_not_supported">フラッシュ機能はサポートされていません。</string>
 </resources>

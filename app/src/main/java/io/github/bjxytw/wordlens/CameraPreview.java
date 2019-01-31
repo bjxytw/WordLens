@@ -62,7 +62,7 @@ public class CameraPreview extends SurfaceView {
         super.onTouchEvent(event);
         if (camera != null &&
                 event.getX() < overlay.getWidth() && event.getY() < overlay.getHeight())
-            camera.setCameraFocus();
+            camera.cameraFocus();
         return true;
     }
 
@@ -86,7 +86,7 @@ public class CameraPreview extends SurfaceView {
                     overlay.clearBox();
                     overlay.setScale(cameraWidth, cameraHeight, width, height);
                     camera.setCameraFocusArea();
-                    camera.setCameraFocus();
+                    camera.cameraFocus();
                 }
             }
         }
