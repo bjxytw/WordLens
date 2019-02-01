@@ -16,13 +16,16 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.bjxytw.wordlens.processor.ImageData;
 import io.github.bjxytw.wordlens.processor.TextRecognition;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+
+import static io.github.bjxytw.wordlens.processor.TextRecognition.RECOGNITION_AREA_HEIGHT;
+import static io.github.bjxytw.wordlens.processor.TextRecognition.RECOGNITION_AREA_WIDTH;
 
 @SuppressWarnings("deprecation")
 public class CameraSource {
@@ -229,9 +232,9 @@ public class CameraSource {
         return size;
     }
 
-    private byte[] createPreviewBuffer(Size previewSize) { int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
-        long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
-        int bufferSize = (int) Math.ceil(sizeInBits / 8.0) + 1;
+    private byte[] createPreviewBuffer(Size previewSize) {
+        int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
+        int bufferSize = (int) Math.ceil((long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel) + 1;
 
         byte[] byteArray = new byte[bufferSize];
         ByteBuffer buffer = ByteBuffer.wrap(byteArray);
@@ -242,10 +245,35 @@ public class CameraSource {
         return byteArray;
     }
 
+
+    private byte[] cropImage(byte[] data) {
+        int width = size.getWidth();
+        int height = size.getHeight();
+
+        int cursorY = graphicOverlay.getCameraCursorRect().centerX();
+        int cursorX = graphicOverlay.getCameraCursorRect().centerY();
+
+        int marginLeftX = cursorX - (RECOGNITION_AREA_HEIGHT / 2);
+        int marginTopY = cursorY - (RECOGNITION_AREA_WIDTH / 2);
+        int marginRightX = cursorX + (RECOGNITION_AREA_HEIGHT / 2);
+        int marginBottomY = cursorY + (RECOGNITION_AREA_WIDTH / 2);
+
+        Arrays.fill(data, 0, marginTopY * width, (byte) 0);
+        Arrays.fill(data, width * marginBottomY,
+                width * height, (byte) 0);
+        for(int i = marginTopY; i < marginBottomY; i++){
+            int offset = i * width;
+            Arrays.fill(data, offset, offset + marginLeftX, (byte) 0);
+            Arrays.fill(data, offset + marginRightX,
+                    offset + width, (byte) 0);
+        }
+        return data;
+    }
+
     private class CameraPreviewCallback implements Camera.PreviewCallback {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
-            processingRunnable.setNextFrame(data, camera);
+            processingRunnable.setNextFrame(cropImage(data), camera);
         }
     }
 
