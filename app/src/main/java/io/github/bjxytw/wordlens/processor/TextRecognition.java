@@ -1,6 +1,11 @@
 package io.github.bjxytw.wordlens.processor;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -16,14 +21,14 @@ import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.camera.ImageData;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public class TextRecognition {
 
     private static final String TAG = "TextRec";
-    public static final int RECOGNITION_AREA_WIDTH = 250;
-    public static final int RECOGNITION_AREA_HEIGHT = 120;
 
     private final FirebaseVisionTextRecognizer detector;
     private final GraphicOverlay graphicOverlay;
@@ -61,7 +66,7 @@ public class TextRecognition {
         }
     }
 
-    private void detectImage(ImageData data) {
+    private void detectImage(final ImageData data) {
         FirebaseVisionImageMetadata metadata =
                 new FirebaseVisionImageMetadata.Builder()
                         .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
@@ -119,5 +124,30 @@ public class TextRecognition {
         return false;
     }
 
+    private static Bitmap getBitmap(ImageData imageData) {
+        ByteBuffer data = imageData.getData();
 
+        data.rewind();
+        byte[] imageInBuffer = new byte[data.limit()];
+        data.get(imageInBuffer, 0, imageInBuffer.length);
+        try {
+            YuvImage image =
+                    new YuvImage(
+                            imageInBuffer, ImageFormat.NV21, imageData.getWidth(), imageData.getHeight(), null);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                image.compressToJpeg(new Rect(0, 0, imageData.getWidth(), imageData.getHeight()), 80, stream);
+
+                Bitmap bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
+
+                stream.close();
+                Matrix matrix = new Matrix();
+
+                matrix.postRotate(90);
+
+                return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        } catch (Exception e) {
+            Log.e("VisionProcessorBase", "Error: " + e.getMessage());
+        }
+        return null;
+    }
 }

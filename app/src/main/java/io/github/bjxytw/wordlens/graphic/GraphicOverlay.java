@@ -1,6 +1,7 @@
 package io.github.bjxytw.wordlens.graphic;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -29,6 +30,7 @@ public class GraphicOverlay extends View {
 
     private Rect cameraCursorRect;
     private RectF cursorRect;
+    private CameraImageGraphic imageGraphic;
 
     public GraphicOverlay(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -99,6 +101,8 @@ public class GraphicOverlay extends View {
         synchronized (lock) {
             for (BoundingBoxGraphic boundingBox : boundingBoxList)
                 boundingBox.draw(canvas);
+            if (imageGraphic != null)
+                imageGraphic.draw(canvas);
         }
         if (cursorRect != null) {
             canvas.drawLine(cursorRect.centerX(), cursorRect.top,
@@ -107,4 +111,11 @@ public class GraphicOverlay extends View {
                     cursorRect.right, cursorRect.centerY(), cursorPaint);
         }
     }
+
+    public void setImageGraphic(CameraImageGraphic imageGraphic) {
+        this.imageGraphic = imageGraphic;
+    }
+
+
+
 }

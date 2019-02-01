@@ -84,9 +84,6 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onRecognitionResult(String resultText, Rect boundingBox) {
         if (!paused) {
-            graphicOverlay.addBox(new BoundingBoxGraphic(graphicOverlay, boundingBox));
-            graphicOverlay.postInvalidate();
-
             String text = DictionarySearch.removeBothEndSymbol(resultText);
             if (text != null && !text.equals(resultTextView.getText().toString())) {
                 resultTextView.setText(text);
