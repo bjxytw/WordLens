@@ -20,6 +20,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.github.bjxytw.wordlens.processor.ImageData;
 import io.github.bjxytw.wordlens.processor.TextRecognition;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 
@@ -228,10 +229,9 @@ public class CameraSource {
         return size;
     }
 
-    private byte[] createPreviewBuffer(Size previewSize) {
-        int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
+    private byte[] createPreviewBuffer(Size previewSize) { int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
         long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
-        int bufferSize = (int) Math.ceil(sizeInBits / 8.0d) + 1;
+        int bufferSize = (int) Math.ceil(sizeInBits / 8.0) + 1;
 
         byte[] byteArray = new byte[bufferSize];
         ByteBuffer buffer = ByteBuffer.wrap(byteArray);
@@ -307,7 +307,7 @@ public class CameraSource {
 
                 try {
                     synchronized (processorLock) {
-                        frameProcessor.process(data, size);
+                        frameProcessor.process(new ImageData(data, size.getWidth(), size.getHeight()));
                     }
                 } catch (Throwable t) {
                     Log.e(TAG, "Exception thrown from receiver.", t);
