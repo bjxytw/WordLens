@@ -51,7 +51,6 @@ public class TextRecognition {
 
     public void process(ImageData data) {
         if (data != null && processingImageData == null) {
-
                 Log.i(TAG, "Process an image");
                 processingImageData = data;
                 detectImage(processingImageData);
@@ -92,7 +91,6 @@ public class TextRecognition {
 
     private void processResult(FirebaseVisionText results) {
         FirebaseVisionText.Element detectedElement = null;
-        graphicOverlay.clearBox();
         List<FirebaseVisionText.TextBlock> blocks = results.getTextBlocks();
         for (int i = 0; i < blocks.size(); i++) {
             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
@@ -107,10 +105,12 @@ public class TextRecognition {
             }
         }
         if (detectedElement != null) {
+            graphicOverlay.setRecognising(true);
             String text = detectedElement.getText();
             Log.i(TAG, "Text Detected: " + text);
             listener.onRecognitionResult(text, detectedElement.getBoundingBox());
-        }
+        } else graphicOverlay.setRecognising(false);
+        graphicOverlay.postInvalidate();
 
         processingImageData = null;
     }
@@ -124,30 +124,4 @@ public class TextRecognition {
         return false;
     }
 
-    private static Bitmap getBitmap(ImageData imageData) {
-        ByteBuffer data = imageData.getData();
-
-        data.rewind();
-        byte[] imageInBuffer = new byte[data.limit()];
-        data.get(imageInBuffer, 0, imageInBuffer.length);
-        try {
-            YuvImage image =
-                    new YuvImage(
-                            imageInBuffer, ImageFormat.NV21, imageData.getWidth(), imageData.getHeight(), null);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                image.compressToJpeg(new Rect(0, 0, imageData.getWidth(), imageData.getHeight()), 80, stream);
-
-                Bitmap bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
-
-                stream.close();
-                Matrix matrix = new Matrix();
-
-                matrix.postRotate(90);
-
-                return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        } catch (Exception e) {
-            Log.e("VisionProcessorBase", "Error: " + e.getMessage());
-        }
-        return null;
-    }
 }

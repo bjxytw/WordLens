@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.db.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
-import io.github.bjxytw.wordlens.graphic.BoundingBoxGraphic;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 import io.github.bjxytw.wordlens.processor.TextRecognition;
 

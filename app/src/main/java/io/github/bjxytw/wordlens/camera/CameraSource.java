@@ -174,14 +174,12 @@ public class CameraSource {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             if (focusArea != null && parameters != null) {
-                graphicOverlay.setFocusing(true);
                 parameters.setFocusAreas(focusArea);
                 camera.setParameters(parameters);
                 camera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
                         Log.d(TAG, "onAutoFocus: " + success);
-                        graphicOverlay.setFocusing(false);
                     }
                 });
             }
@@ -245,12 +243,6 @@ public class CameraSource {
         return byteArray;
     }
 
-
-
-    private static int half(int size) {
-        return Math.round(size * 0.5f);
-    }
-
     private class CameraPreviewCallback implements Camera.PreviewCallback {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
@@ -265,7 +257,8 @@ public class CameraSource {
 
         private ByteBuffer pendingFrameData;
 
-        FrameProcessingRunnable() {}
+        FrameProcessingRunnable() {
+        }
 
         void setActive(boolean active) {
             synchronized (lock) {
@@ -283,7 +276,7 @@ public class CameraSource {
 
                 if (!bytesToByteBuffer.containsKey(data)) {
                     Log.d(TAG, "Skipping frame. Could not find ByteBuffer associated "
-                                    + "with the image data from the camera.");
+                            + "with the image data from the camera.");
                     return;
                 }
 
@@ -365,6 +358,10 @@ public class CameraSource {
                 }
             }
         }
+    }
+
+    private static int half(int size) {
+        return Math.round(size * 0.5f);
     }
 
     private static Size selectPreviewSize(Camera camera) {
