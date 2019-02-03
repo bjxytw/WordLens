@@ -52,8 +52,8 @@ public class GraphicOverlay extends View {
         }
     }
 
-    public void setScale (int cameraWidth, int cameraHeight,
-                             int previewWidth, int previewHeight) {
+    public void setScale(int cameraWidth, int cameraHeight,
+                         int previewWidth, int previewHeight) {
         synchronized (lock) {
             float widthScaleFactor = (float) cameraWidth / (float) previewWidth;
             float heightScaleFactor = (float) cameraHeight / (float) previewHeight;
@@ -84,7 +84,7 @@ public class GraphicOverlay extends View {
                         cursorRect.centerX(), cursorRect.bottom, cursorPaint);
 
                 canvas.drawLine(cursorRect.left, cursorRect.centerY(),
-                    cursorRect.left + CURSOR_AREA_SIZE * 0.3f, cursorRect.centerY(), cursorPaint);
+                        cursorRect.left + CURSOR_AREA_SIZE * 0.3f, cursorRect.centerY(), cursorPaint);
 
                 canvas.drawLine(cursorRect.right - CURSOR_AREA_SIZE * 0.3f, cursorRect.centerY(),
                         cursorRect.right, cursorRect.centerY(), cursorPaint);
@@ -93,8 +93,4 @@ public class GraphicOverlay extends View {
             }
         }
     }
-
-
-
-
 }

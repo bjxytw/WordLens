@@ -34,9 +34,6 @@ public class CameraSource {
     private static final int REQUESTED_PREVIEW_WIDTH = 640;
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
 
-    private static final int RECOGNITION_AREA_WIDTH = 100;
-    private static final int RECOGNITION_AREA_HEIGHT = 200;
-
     private static final String TAG = "CameraSource";
 
     private final GraphicOverlay graphicOverlay;
@@ -231,8 +228,10 @@ public class CameraSource {
     }
 
     private byte[] createPreviewBuffer(Size previewSize) {
+
         int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
-        int bufferSize = (int) Math.ceil((long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel) + 1;
+        long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
+        int bufferSize = (int) Math.ceil(sizeInBits / 8.0d) + 1;
 
         byte[] byteArray = new byte[bufferSize];
         ByteBuffer buffer = ByteBuffer.wrap(byteArray);
@@ -279,10 +278,7 @@ public class CameraSource {
                             + "with the image data from the camera.");
                     return;
                 }
-
-                cropImage(data);
                 pendingFrameData = bytesToByteBuffer.get(data);
-
                 lock.notifyAll();
             }
         }
@@ -320,48 +316,6 @@ public class CameraSource {
             }
         }
 
-        private void cropImage(byte[] data) {
-            synchronized (lock) {
-                int width = size.getWidth();
-                int height = size.getHeight();
-
-                int cursorY = graphicOverlay.getCameraCursorRect().centerX();
-                int cursorX = graphicOverlay.getCameraCursorRect().centerY();
-
-                int marginLeftX = cursorX - (RECOGNITION_AREA_WIDTH / 2);
-                int marginTopY = cursorY - (RECOGNITION_AREA_HEIGHT / 2);
-                int marginRightX = cursorX + (RECOGNITION_AREA_WIDTH / 2);
-                int marginBottomY = cursorY + (RECOGNITION_AREA_HEIGHT / 2);
-
-                int size = width * height;
-
-                Arrays.fill(data, 0, marginTopY * width, (byte) 0);
-                Arrays.fill(data, width * marginBottomY,
-                        size, (byte) 0);
-
-                Arrays.fill(data, size, size + half(marginTopY * width), (byte) 0);
-                Arrays.fill(data, size + half(width * marginBottomY),
-                        data.length, (byte) 0);
-
-                for (int i = marginTopY; i < marginBottomY; i++) {
-                    int offset = i * width;
-                    Arrays.fill(data, offset, offset + marginLeftX, (byte) 0);
-                    Arrays.fill(data, offset + marginRightX,
-                            offset + width, (byte) 0);
-                }
-
-                for (int i = half(marginTopY); i < half(marginBottomY); i++) {
-                    int offset = i * width + size;
-                    Arrays.fill(data, offset, offset + marginLeftX - 1, (byte) 0);
-                    Arrays.fill(data, offset + marginRightX,
-                            offset + width, (byte) 0);
-                }
-            }
-        }
-    }
-
-    private static int half(int size) {
-        return Math.round(size * 0.5f);
     }
 
     private static Size selectPreviewSize(Camera camera) {
