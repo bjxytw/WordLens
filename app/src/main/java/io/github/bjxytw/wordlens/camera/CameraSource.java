@@ -16,13 +16,11 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.bjxytw.wordlens.processor.TextRecognition;
-import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+import io.github.bjxytw.wordlens.TextRecognition;
 
 @SuppressWarnings("deprecation")
 public class CameraSource {
@@ -35,8 +33,6 @@ public class CameraSource {
     private static final int REQUESTED_PREVIEW_HEIGHT = 480;
 
     private static final String TAG = "CameraSource";
-
-    private final GraphicOverlay graphicOverlay;
 
     private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
 
@@ -53,14 +49,13 @@ public class CameraSource {
     private boolean flashed;
     private List<Camera.Area> focusArea;
 
-    public CameraSource(GraphicOverlay overlay, TextRecognition frameProcessor) {
-        graphicOverlay = overlay;
+    public CameraSource(TextRecognition frameProcessor) {
         processingRunnable = new FrameProcessingRunnable();
         this.frameProcessor = frameProcessor;
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)
-    public synchronized void start(SurfaceHolder surfaceHolder) throws IOException {
+    synchronized void start(SurfaceHolder surfaceHolder) throws IOException {
         if (camera != null) return;
 
         camera = createCamera();
@@ -72,7 +67,7 @@ public class CameraSource {
         processingThread.start();
     }
 
-    public synchronized void stop() {
+    synchronized void stop() {
         processingRunnable.setActive(false);
         if (processingThread != null) {
             try {
@@ -167,7 +162,7 @@ public class CameraSource {
         return camera;
     }
 
-    public synchronized void cameraFocus() {
+    synchronized void cameraFocus() {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             if (focusArea != null && parameters != null) {
@@ -197,8 +192,7 @@ public class CameraSource {
         return false;
     }
 
-    public void setCameraFocusArea() {
-        Rect rect = graphicOverlay.getCameraCursorRect();
+    void setCameraFocusArea(Rect rect) {
         if (supportedAutoFocus && rect != null) {
             focusArea = new ArrayList<>();
             focusArea.add(new Camera.Area(
@@ -223,7 +217,7 @@ public class CameraSource {
         return -1;
     }
 
-    public Size getSize() {
+    Size getSize() {
         return size;
     }
 

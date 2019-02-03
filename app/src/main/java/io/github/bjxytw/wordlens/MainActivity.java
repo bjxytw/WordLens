@@ -12,20 +12,20 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import androidx.annotation.NonNull;
+import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.db.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
-import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
-import io.github.bjxytw.wordlens.processor.TextRecognition;
+import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 
 public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener {
     private static final String TAG = "MainActivity";
     private CameraSource camera = null;
     private CameraPreview preview;
+    private CameraCursorGraphic cameraCursor;
     private TextRecognition textRecognition;
     private DictionarySearch dictionary;
-    private GraphicOverlay graphicOverlay;
     private ImageButton pauseButton;
     private ImageButton flashButton;
     private TextView resultTextView;
@@ -43,7 +43,7 @@ public final class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         preview = findViewById(R.id.cameraPreview);
-        graphicOverlay = findViewById(R.id.graphicOverlay);
+        cameraCursor = findViewById(R.id.graphicOverlay);
         pauseButton = findViewById(R.id.pauseButton);
         flashButton = findViewById(R.id.flashButton);
         resultTextView = findViewById(R.id.resultText);
@@ -55,7 +55,7 @@ public final class MainActivity extends AppCompatActivity
         pauseButton.setOnClickListener(buttonListener);
         flashButton.setOnClickListener(buttonListener);
 
-        textRecognition = new TextRecognition(graphicOverlay);
+        textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
 
         if (PermissionUtil.isAllPermissionsGranted(this))
@@ -65,13 +65,13 @@ public final class MainActivity extends AppCompatActivity
 
     private void createSources() {
         if (dictionary == null) dictionary = new DictionarySearch(this);
-        if (camera == null) camera = new CameraSource(graphicOverlay, textRecognition);
+        if (camera == null) camera = new CameraSource(textRecognition);
     }
 
     private void startCameraSource() {
         if (camera != null) {
             try {
-                preview.start(camera, graphicOverlay);
+                preview.start(camera, cameraCursor);
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
                 camera.release();
