@@ -10,22 +10,15 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
-import java.util.ArrayList;
-import java.util.List;
-
 
 public class GraphicOverlay extends View {
     private static final int CURSOR_COLOR = Color.CYAN;
-    private static final int CURSOR_FOCUSING_COLOR = Color.YELLOW;
-    private static final int CURSOR_AREA_SIZE = 50;
+    private static final int CURSOR_RECOGNISING_COLOR = Color.YELLOW;
+    private static final int CURSOR_AREA_SIZE = 100;
     private static final float CURSOR_STROKE_WIDTH = 4.0f;
 
     private final Object lock = new Object();
     private final Paint cursorPaint;
-    private final List<BoundingBoxGraphic> boundingBoxList = new ArrayList<>();
-
-    private float widthScaleFactor = 1.0f;
-    private float heightScaleFactor = 1.0f;
 
     private Rect cameraCursorRect;
     private RectF cursorRect;
@@ -48,38 +41,28 @@ public class GraphicOverlay extends View {
         cursorPaint = new Paint();
         cursorPaint.setStyle(Paint.Style.STROKE);
         cursorPaint.setStrokeWidth(CURSOR_STROKE_WIDTH);
-        setFocusing(false);
+        cursorPaint.setAntiAlias(true);
+        setRecognising(false);
     }
 
-    public void clearBox() {
+    public void setRecognising(boolean recognising) {
         synchronized (lock) {
-            boundingBoxList.clear();
-        }
-        postInvalidate();
-    }
-
-    public void addBox(BoundingBoxGraphic boundingBox) {
-        synchronized (lock) {
-            boundingBoxList.add(boundingBox);
+            if (recognising) cursorPaint.setColor(CURSOR_RECOGNISING_COLOR);
+            else cursorPaint.setColor(CURSOR_COLOR);
         }
     }
 
-    public void setFocusing(boolean focusing) {
-        if (focusing) cursorPaint.setColor(CURSOR_FOCUSING_COLOR);
-        else cursorPaint.setColor(CURSOR_COLOR);
-    }
-
-    public void setScale (int cameraWidth, int cameraHeight,
-                             int previewWidth, int previewHeight) {
+    public void setScale(int cameraWidth, int cameraHeight,
+                         int previewWidth, int previewHeight) {
         synchronized (lock) {
-            widthScaleFactor = (float) previewWidth / (float) cameraWidth;
-            heightScaleFactor = (float) previewHeight / (float) cameraHeight;
+            float widthScaleFactor = (float) cameraWidth / (float) previewWidth;
+            float heightScaleFactor = (float) cameraHeight / (float) previewHeight;
 
             if (cursorRect != null) {
-                new RectF(cursorRect.left / widthScaleFactor,
-                        cursorRect.top / heightScaleFactor,
-                        cursorRect.right / widthScaleFactor,
-                        cursorRect.bottom / heightScaleFactor)
+                new RectF(cursorRect.left * widthScaleFactor,
+                        cursorRect.top * heightScaleFactor,
+                        cursorRect.right * widthScaleFactor,
+                        cursorRect.bottom * heightScaleFactor)
                         .round(cameraCursorRect = new Rect());
             }
         }
@@ -89,22 +72,25 @@ public class GraphicOverlay extends View {
         return cameraCursorRect;
     }
 
-    public float translateX(float x) { return x * widthScaleFactor; }
-
-    public float translateY(float y) { return y * heightScaleFactor; }
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         synchronized (lock) {
-            for (BoundingBoxGraphic boundingBox : boundingBoxList)
-                boundingBox.draw(canvas);
-        }
-        if (cursorRect != null) {
-            canvas.drawLine(cursorRect.centerX(), cursorRect.top,
-                    cursorRect.centerX(), cursorRect.bottom, cursorPaint);
-            canvas.drawLine(cursorRect.left, cursorRect.centerY(),
-                    cursorRect.right, cursorRect.centerY(), cursorPaint);
+            if (cursorRect != null) {
+                canvas.drawLine(cursorRect.centerX(), cursorRect.top, cursorRect.centerX(),
+                        cursorRect.top + CURSOR_AREA_SIZE * 0.3f, cursorPaint);
+
+                canvas.drawLine(cursorRect.centerX(), cursorRect.bottom - CURSOR_AREA_SIZE * 0.3f,
+                        cursorRect.centerX(), cursorRect.bottom, cursorPaint);
+
+                canvas.drawLine(cursorRect.left, cursorRect.centerY(),
+                        cursorRect.left + CURSOR_AREA_SIZE * 0.3f, cursorRect.centerY(), cursorPaint);
+
+                canvas.drawLine(cursorRect.right - CURSOR_AREA_SIZE * 0.3f, cursorRect.centerY(),
+                        cursorRect.right, cursorRect.centerY(), cursorPaint);
+
+                canvas.drawCircle(cursorRect.centerX(), cursorRect.centerY(), CURSOR_AREA_SIZE * 0.3f, cursorPaint);
+            }
         }
     }
 }

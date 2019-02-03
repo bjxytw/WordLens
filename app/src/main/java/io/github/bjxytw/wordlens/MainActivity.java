@@ -13,8 +13,8 @@ import android.widget.Toast;
 import java.io.IOException;
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraSource;
+import io.github.bjxytw.wordlens.db.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
-import io.github.bjxytw.wordlens.graphic.BoundingBoxGraphic;
 import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
 import io.github.bjxytw.wordlens.processor.TextRecognition;
 
@@ -83,13 +83,10 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onRecognitionResult(String resultText, Rect boundingBox) {
         if (!paused) {
-            graphicOverlay.addBox(new BoundingBoxGraphic(graphicOverlay, boundingBox));
-            graphicOverlay.postInvalidate();
-
             String text = DictionarySearch.removeBothEndSymbol(resultText);
             if (text != null && !text.equals(resultTextView.getText().toString())) {
                 resultTextView.setText(text);
-                DictionarySearch.DictionaryData data = dictionary.search(text);
+                DictionaryData data = dictionary.search(text);
                 if (data != null && !data.wordText().equals(headTextView.getText().toString())) {
                     headTextView.setText(data.wordText());
                     meanTextView.setText(data.meanText());

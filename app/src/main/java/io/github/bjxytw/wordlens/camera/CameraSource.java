@@ -16,6 +16,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,14 +171,12 @@ public class CameraSource {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             if (focusArea != null && parameters != null) {
-                graphicOverlay.setFocusing(true);
                 parameters.setFocusAreas(focusArea);
                 camera.setParameters(parameters);
                 camera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
                         Log.d(TAG, "onAutoFocus: " + success);
-                        graphicOverlay.setFocusing(false);
                     }
                 });
             }
@@ -229,6 +228,7 @@ public class CameraSource {
     }
 
     private byte[] createPreviewBuffer(Size previewSize) {
+
         int bitsPerPixel = ImageFormat.getBitsPerPixel(ImageFormat.NV21);
         long sizeInBits = (long) previewSize.getHeight() * previewSize.getWidth() * bitsPerPixel;
         int bufferSize = (int) Math.ceil(sizeInBits / 8.0d) + 1;
@@ -256,7 +256,8 @@ public class CameraSource {
 
         private ByteBuffer pendingFrameData;
 
-        FrameProcessingRunnable() {}
+        FrameProcessingRunnable() {
+        }
 
         void setActive(boolean active) {
             synchronized (lock) {
@@ -274,12 +275,10 @@ public class CameraSource {
 
                 if (!bytesToByteBuffer.containsKey(data)) {
                     Log.d(TAG, "Skipping frame. Could not find ByteBuffer associated "
-                                    + "with the image data from the camera.");
+                            + "with the image data from the camera.");
                     return;
                 }
-
                 pendingFrameData = bytesToByteBuffer.get(data);
-
                 lock.notifyAll();
             }
         }
@@ -307,7 +306,7 @@ public class CameraSource {
 
                 try {
                     synchronized (processorLock) {
-                        frameProcessor.process(data, size);
+                        frameProcessor.process(new ImageData(data, size.getWidth(), size.getHeight()));
                     }
                 } catch (Throwable t) {
                     Log.e(TAG, "Exception thrown from receiver.", t);
