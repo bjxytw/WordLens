@@ -3,6 +3,10 @@ package io.github.bjxytw.wordlens;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -11,16 +15,24 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.db.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
 import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
+import io.github.bjxytw.wordlens.db.LinkTextData;
 
 public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener {
     private static final String TAG = "MainActivity";
+    private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
     private CameraSource camera = null;
     private CameraPreview preview;
     private CameraCursorGraphic cameraCursor;
@@ -28,10 +40,12 @@ public final class MainActivity extends AppCompatActivity
     private DictionarySearch dictionary;
     private ImageButton pauseButton;
     private ImageButton flashButton;
+    private ImageButton dictionaryBackButton;
     private TextView resultTextView;
     private TextView headTextView;
     private TextView meanTextView;
     private ScrollView dictionaryScroll;
+    private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
     private boolean paused;
     private boolean flashed;
 
@@ -46,6 +60,7 @@ public final class MainActivity extends AppCompatActivity
         cameraCursor = findViewById(R.id.graphicOverlay);
         pauseButton = findViewById(R.id.pauseButton);
         flashButton = findViewById(R.id.flashButton);
+        dictionaryBackButton = findViewById(R.id.dictionaryBack);
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
@@ -54,6 +69,8 @@ public final class MainActivity extends AppCompatActivity
         ButtonClick buttonListener = new ButtonClick();
         pauseButton.setOnClickListener(buttonListener);
         flashButton.setOnClickListener(buttonListener);
+        dictionaryBackButton.setOnClickListener(buttonListener);
+        dictionaryBackButton.setVisibility(View.GONE);
 
         textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
@@ -88,12 +105,44 @@ public final class MainActivity extends AppCompatActivity
                 resultTextView.setText(text);
                 DictionaryData data = dictionary.search(text);
                 if (data != null && !data.wordText().equals(headTextView.getText().toString())) {
-                    headTextView.setText(data.wordText());
-                    meanTextView.setText(data.meanText());
-                    dictionaryScroll.scrollTo(0, 0);
+                    setDictionaryText(data);
+                    linkHistory.clear();
+                    linkHistory.add(data);
                 }
             }
         }
+    }
+
+    private void setDictionaryText(DictionaryData data) {
+        Matcher matcher = Pattern.compile(REGEX_LINK).matcher(data.meanText());
+        List<LinkTextData> linkDataList = new ArrayList<>();
+        while (matcher.find()) {
+            String findText =  matcher.group();
+            if (!findText.equals(data.wordText())) {
+                linkDataList.add(new LinkTextData(matcher.start(), matcher.end(), findText));
+            }
+        }
+
+        SpannableString spanMeanText = new SpannableString(data.meanText());
+        for (final LinkTextData linkData : linkDataList) {
+            final DictionaryData linkDictionaryData = dictionary.searchDirect(linkData.getText());
+            if (linkDictionaryData != null) {
+                spanMeanText.setSpan(new ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        setDictionaryText(linkDictionaryData);
+                        linkHistory.add(linkDictionaryData);
+                        dictionaryBackButton.setVisibility(View.VISIBLE);
+                    }
+                }, linkData.getStart(), linkData.getEnd(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+
+        headTextView.setText(data.wordText());
+        meanTextView.setText(spanMeanText);
+        meanTextView.setMovementMethod(LinkMovementMethod.getInstance());
+        dictionaryScroll.scrollTo(0, 0);
+
     }
 
     @Override
@@ -169,6 +218,14 @@ public final class MainActivity extends AppCompatActivity
                             camera.cameraFlash(false);
                             setFlash(false);
                         }
+                    }
+                    break;
+                case R.id.dictionaryBack:
+                    if (linkHistory.size() >= 2) {
+                        setDictionaryText(linkHistory.get(linkHistory.size() - 2));
+                        if (linkHistory.size() == 2)
+                            dictionaryBackButton.setVisibility(View.GONE);
+                        linkHistory.removeLast();
                     }
             }
         }

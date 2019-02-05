@@ -8,7 +8,7 @@ import android.util.Log;
 
 public class DictionarySearch {
     private static final String TAG = "DicSearch";
-    private static final String SYMBOLS = "[!-/:-@\\[-`{-~]";
+    private static final String REGEX_SYMBOL = "[!-/:-@\\[-`{-~]";
     private static final String SQL_SEARCH = "SELECT * FROM items WHERE word COLLATE nocase=?";
     private static final String WORD_COL = "word";
     private static final String MEAN_COL = "mean";
@@ -26,7 +26,7 @@ public class DictionarySearch {
     public DictionaryData search(String word)  {
         String searchWord = removeBothEndSymbol(word.toLowerCase());
         if (searchWord != null) {
-            DictionaryData result = searchFromSql(searchWord);
+            DictionaryData result = searchDirect(searchWord);
             if (result == null) result = searchWithoutAbbreviation(searchWord);
             if (result == null) result = searchBaseForm(searchWord);
             return result;
@@ -34,10 +34,9 @@ public class DictionarySearch {
         return null;
     }
 
-    private DictionaryData searchFromSql(String searchWord) {
+    public DictionaryData searchDirect(String searchWord) {
         String wordText = null;
         StringBuilder meanText = new StringBuilder();
-        Log.d(TAG, "Search: " + searchWord);
         Cursor dbCursor = database.rawQuery(SQL_SEARCH, new String[]{searchWord});
         while (dbCursor.moveToNext()) {
             if (wordText == null)
@@ -56,7 +55,7 @@ public class DictionarySearch {
     private DictionaryData searchWithoutAbbreviation(String word) {
         int abbreviationIndex = word.lastIndexOf("'");
         if (abbreviationIndex != -1)
-            return searchFromSql(word.substring(0, abbreviationIndex));
+            return searchDirect(word.substring(0, abbreviationIndex));
         return null;
     }
 
@@ -71,7 +70,7 @@ public class DictionarySearch {
                 case IEST:
                     searchWord.append(subStringFirst(word, wordEnd.getSize()));
                     searchWord.append('y');
-                    return searchFromSql(searchWord.toString());
+                    return searchDirect(searchWord.toString());
                 case ING:
                 case ED:
                 case ER:
@@ -81,22 +80,22 @@ public class DictionarySearch {
                     if (consecutiveLetter != null) {
                         searchWord.append(subStringFirst(word, wordEnd.getSize() + 2));
                         searchWord.append(consecutiveLetter);
-                        DictionaryData result = searchFromSql(searchWord.toString());
+                        DictionaryData result = searchDirect(searchWord.toString());
                         if (result != null) return result;
                         else searchWord.setLength(0);
                     }
                 case ES:
                     searchWord.append(subStringFirst(word, wordEnd.getSize()));
                     searchWord.append('e');
-                    DictionaryData result = searchFromSql(searchWord.toString());
+                    DictionaryData result = searchDirect(searchWord.toString());
                     if (result == null) {
                         searchWord.deleteCharAt(searchWord.length() - 1);
-                        result = searchFromSql(searchWord.toString());
+                        result = searchDirect(searchWord.toString());
                     }
                     return result;
                 case S:
                     searchWord.append(subStringFirst(word, wordEnd.getSize()));
-                    return searchFromSql(searchWord.toString());
+                    return searchDirect(searchWord.toString());
             }
         }
         return null;
@@ -140,9 +139,9 @@ public class DictionarySearch {
         if (size > 0) {
             int begin = 0;
             int end = size;
-            if (text.substring(0, 1).matches(SYMBOLS))
+            if (text.substring(0, 1).matches(REGEX_SYMBOL))
                 begin = 1;
-            if (text.substring(size - 1).matches(SYMBOLS))
+            if (text.substring(size - 1).matches(REGEX_SYMBOL))
                 end = size - 1;
 
             if (end - begin > 0)

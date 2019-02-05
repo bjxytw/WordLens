@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -64,6 +65,7 @@
         android:background="@color/colorPrimaryLight"
         android:layout_alignParentBottom="true">
         <View
+            android:id="@+id/border_line"
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:background="@color/colorAccent"/>
@@ -71,26 +73,43 @@
         <ScrollView
             android:id="@+id/dictionaryScrollView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_below="@id/border_line">
 
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="4dp">
-                <TextView
-                    android:id="@+id/headText"
+                android:orientation="vertical">
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="28sp"
-                    android:textColor="@color/colorPrimaryText"/>
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+                    <ImageButton
+                        android:id="@+id/dictionaryBack"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="@color/transparent"
+                        android:contentDescription="@null"
+                        app:srcCompat="@drawable/ic_arrow_back" />
+                    <TextView
+                        android:id="@+id/headText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="2dp"
+                        android:textColor="@color/colorPrimaryText"
+                        android:textSize="28sp" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/meanText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/headText"
-                    android:textSize="16sp"
-                    android:textColor="@color/colorSecondaryText"/>
-            </RelativeLayout>
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:textColor="@color/colorSecondaryText"
+                    android:textSize="16sp" />
+            </LinearLayout>
 
         </ScrollView>
 
