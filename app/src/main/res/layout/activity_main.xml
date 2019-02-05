@@ -7,12 +7,12 @@
     android:background="@color/black"
     android:keepScreenOn="true">
 
-    <io.github.bjxytw.wordlens.CameraPreview
+    <io.github.bjxytw.wordlens.camera.CameraPreview
         android:id="@+id/cameraPreview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <io.github.bjxytw.wordlens.graphic.GraphicOverlay
+    <io.github.bjxytw.wordlens.camera.CameraCursorGraphic
         android:id="@+id/graphicOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -60,7 +60,7 @@
     <RelativeLayout
         android:id="@+id/meanPreview"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="260dp"
         android:background="@color/colorPrimaryLight"
         android:layout_alignParentBottom="true">
         <View

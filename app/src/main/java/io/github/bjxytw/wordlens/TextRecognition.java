@@ -1,4 +1,4 @@
-package io.github.bjxytw.wordlens.processor;
+package io.github.bjxytw.wordlens;
 
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
@@ -14,7 +14,7 @@ import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.camera.ImageData;
-import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
+import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,11 +24,9 @@ import java.util.List;
 public class TextRecognition {
 
     private static final String TAG = "TextRec";
-    private static final int RECOGNITION_AREA_WIDTH = 100;
-    private static final int RECOGNITION_AREA_HEIGHT = 200;
 
     private final FirebaseVisionTextRecognizer detector;
-    private final GraphicOverlay graphicOverlay;
+    private final CameraCursorGraphic cursor;
 
     private TextRecognitionListener listener;
     private ImageData processingImageData;
@@ -37,18 +35,17 @@ public class TextRecognition {
         void onRecognitionResult(String result, Rect boundingBox);
     }
 
-    public TextRecognition(GraphicOverlay overlay) {
+    TextRecognition(CameraCursorGraphic overlay) {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
-        graphicOverlay = overlay;
+        cursor = overlay;
     }
 
-    public void setListener(TextRecognitionListener listener) {
+    void setListener(TextRecognitionListener listener) {
         this.listener = listener;
     }
 
     public void process(ImageData data) {
         if (data != null && processingImageData == null) {
-            Log.i(TAG, "Process an image");
             processingImageData = data;
             detectImage(processingImageData);
         }
@@ -71,11 +68,12 @@ public class TextRecognition {
                         .setRotation(CameraSource.ROTATION)
                         .build();
 
-        final ByteBuffer data = cropImage(imageData);
+        final ByteBuffer data = fillImageMargin(imageData);
         detector.processImage(FirebaseVisionImage.fromByteBuffer(data, metadata))
                 .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
+                        Log.i(TAG, "Detected an image.");
                         processResult(results);
                     }
                 })
@@ -96,7 +94,7 @@ public class TextRecognition {
                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                 for (int k = 0; k < elements.size(); k++) {
                     FirebaseVisionText.Element element = elements.get(k);
-                    if (isCursorOnBox(graphicOverlay.getCameraCursorRect(),
+                    if (isCursorOnBox(cursor.getCameraCursorRect(),
                             element.getBoundingBox()))
                         detectedElement = element;
                 }
@@ -104,51 +102,44 @@ public class TextRecognition {
         }
 
         if (detectedElement != null) {
-            graphicOverlay.setRecognising(true);
+            cursor.setCursorRecognising(true);
             String text = detectedElement.getText();
-            Log.i(TAG, "Text Detected: " + text);
             listener.onRecognitionResult(text, detectedElement.getBoundingBox());
-        } else graphicOverlay.setRecognising(false);
-        graphicOverlay.postInvalidate();
+        } else cursor.setCursorRecognising(false);
+        cursor.postInvalidate();
 
         processingImageData = null;
     }
 
-    private ByteBuffer cropImage(ImageData data) {
+    private ByteBuffer fillImageMargin(ImageData data) {
         ByteBuffer buffer = data.getData();
         byte[] array = buffer.array();
 
         int width = data.getWidth();
         int height = data.getHeight();
-
-        int cursorY = graphicOverlay.getCameraCursorRect().centerX();
-        int cursorX = graphicOverlay.getCameraCursorRect().centerY();
-
-        int marginLeftX = cursorX - (RECOGNITION_AREA_WIDTH / 2);
-        int marginTopY = cursorY - (RECOGNITION_AREA_HEIGHT / 2);
-        int marginRightX = cursorX + (RECOGNITION_AREA_WIDTH / 2);
-        int marginBottomY = cursorY + (RECOGNITION_AREA_HEIGHT / 2);
-
         int size = width * height;
 
-        Arrays.fill(array, 0, marginTopY * width, (byte) 0);
-        Arrays.fill(array, width * marginBottomY,
-                size + half(marginTopY * width), (byte) 0);
-        Arrays.fill(array, size + half(width * marginBottomY),
-                array.length, (byte) 0);
+        Rect area = cursor.getCameraRecognitionRect();
+        if (area != null) {
+            Arrays.fill(array, 0, area.top * width, (byte) 0);
+            Arrays.fill(array, width * area.bottom,
+                    size + half(area.top * width), (byte) 0);
+            Arrays.fill(array, size + half(width * area.bottom),
+                    array.length, (byte) 0);
 
-        for (int i = marginTopY; i < marginBottomY; i++) {
-            int offset = i * width;
-            Arrays.fill(array, offset, offset + marginLeftX, (byte) 0);
-            Arrays.fill(array, offset + marginRightX,
-                    offset + width, (byte) 0);
-        }
+            for (int i = area.top; i < area.bottom; i++) {
+                int offset = i * width;
+                Arrays.fill(array, offset, offset + area.left, (byte) 0);
+                Arrays.fill(array, offset + area.right,
+                        offset + width, (byte) 0);
+            }
 
-        for (int i = half(marginTopY); i < half(marginBottomY); i++) {
-            int offset = i * width + size;
-            Arrays.fill(array, offset, offset + marginLeftX - 1, (byte) 0);
-            Arrays.fill(array, offset + marginRightX,
-                    offset + width, (byte) 0);
+            for (int i = half(area.top); i < half(area.bottom); i++) {
+                int offset = i * width + size;
+                Arrays.fill(array, offset, offset + area.left - 1, (byte) 0);
+                Arrays.fill(array, offset + area.right,
+                        offset + width, (byte) 0);
+            }
         }
         return buffer;
     }
@@ -159,8 +150,8 @@ public class TextRecognition {
 
     private static boolean isCursorOnBox(Rect cursor, Rect box) {
         if (cursor != null && box != null) {
-            float x = cursor.centerX();
-            float y = cursor.centerY();
+            float x = cursor.centerY();
+            float y = cursor.centerX();
             return x > box.left && y > box.top && x < box.right && y < box.bottom;
         }
         return false;

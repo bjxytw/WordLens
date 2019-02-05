@@ -1,4 +1,4 @@
-package io.github.bjxytw.wordlens;
+package io.github.bjxytw.wordlens.camera;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -12,16 +12,13 @@ import com.google.android.gms.common.images.Size;
 
 import java.io.IOException;
 
-import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.graphic.GraphicOverlay;
-
 public class CameraPreview extends SurfaceView {
     private static final String TAG = "CameraPreview";
 
     private boolean startRequested;
     private boolean surfaceAvailable;
     private CameraSource camera;
-    private GraphicOverlay overlay;
+    private CameraCursorGraphic cursor;
 
     public CameraPreview(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -30,11 +27,11 @@ public class CameraPreview extends SurfaceView {
         getHolder().addCallback(new SurfaceCallback());
     }
 
-    public void start(CameraSource camera, GraphicOverlay overlay) throws IOException {
+    public void start(CameraSource camera, CameraCursorGraphic overlay) throws IOException {
         if (camera == null) stop();
 
         this.camera = camera;
-        this.overlay = overlay;
+        this.cursor = overlay;
 
         if (this.camera != null) {
             startRequested = true;
@@ -60,7 +57,7 @@ public class CameraPreview extends SurfaceView {
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
         if (camera != null &&
-                event.getX() < overlay.getWidth() && event.getY() < overlay.getHeight())
+                event.getX() < cursor.getWidth() && event.getY() < cursor.getHeight())
             camera.cameraFocus();
         return true;
     }
@@ -81,10 +78,10 @@ public class CameraPreview extends SurfaceView {
                     setMeasuredDimension(width, height);
                 }
 
-                if (overlay != null) {
-                    overlay.setScale(cameraWidth, cameraHeight, width, height);
-                    overlay.postInvalidate();
-                    camera.setCameraFocusArea();
+                if (cursor != null) {
+                    cursor.setScale(cameraWidth, cameraHeight, width, height);
+                    cursor.postInvalidate();
+                    camera.setCameraFocusArea(cursor.getCameraCursorRect());
                     camera.cameraFocus();
                 }
             }
