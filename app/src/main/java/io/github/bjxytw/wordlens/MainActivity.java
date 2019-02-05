@@ -104,8 +104,10 @@ public final class MainActivity extends AppCompatActivity
             if (text != null && !text.equals(resultTextView.getText().toString())) {
                 resultTextView.setText(text);
                 DictionaryData data = dictionary.search(text);
-                if (data != null && !data.wordText().equals(headTextView.getText().toString())) {
+                if (data != null && (linkHistory.size() == 0 ||
+                        !data.wordText().equals(linkHistory.getFirst().wordText()))) {
                     setDictionaryText(data);
+                    dictionaryBackButton.setVisibility(View.GONE);
                     linkHistory.clear();
                     linkHistory.add(data);
                 }

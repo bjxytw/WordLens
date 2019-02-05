@@ -56,8 +56,7 @@ public class CameraPreview extends SurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        if (camera != null &&
-                event.getX() < cursor.getWidth() && event.getY() < cursor.getHeight())
+        if (camera != null && event.getY() < cursor.getHeight())
             camera.cameraFocus();
         return true;
     }
