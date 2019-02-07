@@ -7,6 +7,7 @@
     <color name="colorOverlay">#80323232</color>
     <color name="colorPrimaryText">#212121</color>
     <color name="colorSecondaryText">#757575</color>
+    <color name="colorToolButton">#AAAAAA</color>
     <color name="colorButtonIcon">#99000000</color>
     <color name="colorClickedButtonIcon">#9900BCD4</color>
     <color name="colorButtonBackground">#99FFFFFF</color>

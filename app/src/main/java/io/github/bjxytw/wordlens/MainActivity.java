@@ -1,7 +1,14 @@
 package io.github.bjxytw.wordlens;
 
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.customtabs.CustomTabsIntent;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -33,7 +40,7 @@ public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener {
     private static final String TAG = "MainActivity";
     private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
-    private CameraSource camera = null;
+    private CameraSource camera;
     private CameraPreview preview;
     private CameraCursorGraphic cameraCursor;
     private TextRecognition textRecognition;
@@ -46,6 +53,7 @@ public final class MainActivity extends AppCompatActivity
     private TextView meanTextView;
     private ScrollView dictionaryScroll;
     private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
+    private String recognizedText;
     private boolean paused;
     private boolean flashed;
 
@@ -65,12 +73,16 @@ public final class MainActivity extends AppCompatActivity
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
         dictionaryScroll = findViewById(R.id.dictionaryScrollView);
+        ImageButton searchButton = findViewById(R.id.searchButton);
+        ImageButton copyButton = findViewById(R.id.copyButton);
 
         ButtonClick buttonListener = new ButtonClick();
         pauseButton.setOnClickListener(buttonListener);
         flashButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setVisibility(View.GONE);
+        searchButton.setOnClickListener(buttonListener);
+        copyButton.setOnClickListener(buttonListener);
 
         textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
@@ -101,7 +113,8 @@ public final class MainActivity extends AppCompatActivity
     public void onRecognitionResult(String resultText, Rect boundingBox) {
         if (!paused) {
             String text = DictionarySearch.removeBothEndSymbol(resultText);
-            if (text != null && !text.equals(resultTextView.getText().toString())) {
+            if (text != null && !text.equals(recognizedText)) {
+                recognizedText = text;
                 resultTextView.setText(text);
                 DictionaryData data = dictionary.search(text);
                 if (data != null && (linkHistory.size() == 0 ||
@@ -144,7 +157,6 @@ public final class MainActivity extends AppCompatActivity
         meanTextView.setText(spanMeanText);
         meanTextView.setMovementMethod(LinkMovementMethod.getInstance());
         dictionaryScroll.scrollTo(0, 0);
-
     }
 
     @Override
@@ -199,6 +211,40 @@ public final class MainActivity extends AppCompatActivity
         flashed = on;
     }
 
+    private void searchOnBrowser() {
+        if (recognizedText != null) {
+            String searchURL = getString(R.string.google_search_url) + recognizedText;
+            //Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(searchURL));
+            //startActivity(intent);
+
+            try {
+                CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setToolbarColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                        .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                        .build();
+                tabsIntent.launchUrl(this, Uri.parse(searchURL));
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, e.toString());
+                Toast.makeText(this,
+                        getString(R.string.custom_tabs_exception), Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void copyToClipboard() {
+        if (recognizedText != null) {
+            ClipboardManager clipboardManager =
+                    (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboardManager != null) {
+                clipboardManager.setPrimaryClip(
+                        ClipData.newPlainText("recognizedText", recognizedText));
+                Toast.makeText(this,
+                        getString(R.string.copied_message), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private class ButtonClick implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -229,6 +275,12 @@ public final class MainActivity extends AppCompatActivity
                             dictionaryBackButton.setVisibility(View.GONE);
                         linkHistory.removeLast();
                     }
+                    break;
+                case R.id.searchButton:
+                    searchOnBrowser();
+                    break;
+                case R.id.copyButton:
+                    copyToClipboard();
             }
         }
     }
