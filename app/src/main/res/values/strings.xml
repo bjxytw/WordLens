@@ -5,6 +5,4 @@
     <string name="flash_not_supported">フラッシュ機能はサポートされていません。</string>
     <string name="copied_message">コピーしました</string>
     <string name="custom_tabs_exception">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
-    <string name="google_search_url">https://www.google.com/search?q=</string>
-    <string name="eijiro_search_url">https://eow.alc.co.jp/search?q=</string>
 </resources>

@@ -1,8 +1,9 @@
-package io.github.bjxytw.wordlens.db;
+package io.github.bjxytw.wordlens.data;
 
 public class DictionaryData {
     private final String word, mean;
-    DictionaryData(String word, String mean) {
+
+    public DictionaryData(String word, String mean) {
         this.word = word;
         this.mean = mean;
     }

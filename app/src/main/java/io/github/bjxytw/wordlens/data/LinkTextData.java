@@ -1,4 +1,4 @@
-package io.github.bjxytw.wordlens.db;
+package io.github.bjxytw.wordlens.data;
 
 public class LinkTextData {
     private int start, end;

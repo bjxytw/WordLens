@@ -3,7 +3,8 @@ package io.github.bjxytw.wordlens.db;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
+
+import io.github.bjxytw.wordlens.data.DictionaryData;
 
 
 public class DictionarySearch {

@@ -31,10 +31,10 @@ import java.util.regex.Pattern;
 import androidx.annotation.NonNull;
 import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.db.DictionaryData;
+import io.github.bjxytw.wordlens.data.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
 import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
-import io.github.bjxytw.wordlens.db.LinkTextData;
+import io.github.bjxytw.wordlens.data.LinkTextData;
 
 public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener {
@@ -56,6 +56,7 @@ public final class MainActivity extends AppCompatActivity
     private String recognizedText;
     private boolean paused;
     private boolean flashed;
+    private boolean customTabsOpened;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -181,6 +182,7 @@ public final class MainActivity extends AppCompatActivity
         super.onResume();
         setPause(false);
         setFlash(flashed);
+        customTabsOpened = false;
         startCameraSource();
     }
 
@@ -224,23 +226,11 @@ public final class MainActivity extends AppCompatActivity
                         .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                         .build();
                 tabsIntent.launchUrl(this, Uri.parse(searchURL));
+                customTabsOpened = true;
             } catch (ActivityNotFoundException e) {
                 Log.e(TAG, e.toString());
                 Toast.makeText(this,
                         getString(R.string.custom_tabs_exception), Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private void copyToClipboard() {
-        if (recognizedText != null) {
-            ClipboardManager clipboardManager =
-                    (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            if (clipboardManager != null) {
-                clipboardManager.setPrimaryClip(
-                        ClipData.newPlainText("recognizedText", recognizedText));
-                Toast.makeText(this,
-                        getString(R.string.copied_message), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -250,8 +240,8 @@ public final class MainActivity extends AppCompatActivity
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.pauseButton:
-                    if (!paused) preview.stop();
-                    else startCameraSource();
+                    if (paused) startCameraSource();
+                    else preview.stop();
                     setPause(!paused);
                     break;
                 case R.id.flashButton:
@@ -277,10 +267,20 @@ public final class MainActivity extends AppCompatActivity
                     }
                     break;
                 case R.id.searchButton:
-                    searchOnBrowser();
+                    if (!customTabsOpened)
+                        searchOnBrowser();
                     break;
                 case R.id.copyButton:
-                    copyToClipboard();
+                    if (recognizedText != null) {
+                        ClipboardManager clipboardManager =
+                                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (clipboardManager != null) {
+                            clipboardManager.setPrimaryClip(
+                                    ClipData.newPlainText("recognizedText", recognizedText));
+                            Toast.makeText(MainActivity.this,
+                                    getString(R.string.copied_message), Toast.LENGTH_SHORT).show();
+                        }
+                    }
             }
         }
     }

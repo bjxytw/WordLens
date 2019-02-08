@@ -1,11 +1,12 @@
-package io.github.bjxytw.wordlens.camera;
+package io.github.bjxytw.wordlens.data;
 
 import java.nio.ByteBuffer;
 
 public class ImageData {
     private final ByteBuffer data;
     private final int width, height;
-    ImageData(ByteBuffer data, int width, int height) {
+
+    public ImageData(ByteBuffer data, int width, int height) {
         this.data = data;
         this.width = width;
         this.height = height;

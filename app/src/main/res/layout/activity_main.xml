@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/pauseButton"
         android:layout_alignEnd="@id/pauseButton"
-        android:layout_marginBottom="6dp"
+        android:layout_marginBottom="5dp"
         android:background="@drawable/button_background"
         android:contentDescription="@null"/>
 
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/toolOverlay"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="6dp"
+        android:layout_marginEnd="4dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/button_background"
         android:contentDescription="@null"/>
@@ -62,7 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="10dp"
             android:background="@color/transparent"
             android:contentDescription="@null"
             app:srcCompat="@drawable/ic_content_copy" />
@@ -72,7 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_toStartOf="@id/copyButton"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="5dp"
             android:background="@color/transparent"
             android:contentDescription="@null"
             app:srcCompat="@drawable/ic_search" />

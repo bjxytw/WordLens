@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.github.bjxytw.wordlens.TextRecognition;
+import io.github.bjxytw.wordlens.data.ImageData;
 
 @SuppressWarnings("deprecation")
 public class CameraSource {

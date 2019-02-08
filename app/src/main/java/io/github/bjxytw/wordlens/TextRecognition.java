@@ -13,7 +13,7 @@ import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
 import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.camera.ImageData;
+import io.github.bjxytw.wordlens.data.ImageData;
 import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 
 import java.io.IOException;
