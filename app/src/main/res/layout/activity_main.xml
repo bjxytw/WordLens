@@ -20,11 +20,22 @@
         android:layout_above="@id/meanPreview"/>
 
     <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/settings_button_background"
+        android:contentDescription="@null"
+        app:srcCompat="@drawable/ic_settings" />
+
+    <ImageButton
         android:id="@+id/flashButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/pauseButton"
-        android:layout_alignEnd="@id/pauseButton"
+        android:layout_alignEnd="@id/settingsButton"
         android:layout_marginBottom="5dp"
         android:background="@drawable/button_background"
         android:contentDescription="@null"/>
@@ -34,8 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/toolOverlay"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="4dp"
+        android:layout_alignEnd="@id/settingsButton"
         android:layout_marginBottom="8dp"
         android:background="@drawable/button_background"
         android:contentDescription="@null"/>
@@ -82,7 +92,7 @@
     <RelativeLayout
         android:id="@+id/meanPreview"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="252dp"
         android:background="@color/colorPrimaryLight"
         android:layout_alignParentBottom="true">
         <View
