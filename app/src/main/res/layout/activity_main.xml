@@ -63,7 +63,7 @@
             android:layout_toStartOf="@id/searchButton"
             android:layout_marginStart="8dp"
             android:gravity="center_vertical"
-            android:text="@string/text"
+            android:text="@string/recognizing_text"
             android:textSize="24sp"
             android:textColor="@color/white"/>
 

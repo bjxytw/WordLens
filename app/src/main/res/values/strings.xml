@@ -1,8 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">英単語レンズ</string>
-    <string name="text" tools:ignore="TypographyEllipsis">認識中...</string>
+    <string name="recognizing_text" tools:ignore="TypographyEllipsis">認識中...</string>
     <string name="permission_request">アプリを開始できません。\n権限を許可して下さい。</string>
     <string name="flash_not_supported">フラッシュ機能はサポートされていません。</string>
     <string name="copied_message">コピーしました</string>
-    <string name="custom_tabs_exception">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
+    <string name="browser_cannot_open">ブラウザを開けません。</string>
+    <string name="custom_tabs_cannot_open">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
 </resources>

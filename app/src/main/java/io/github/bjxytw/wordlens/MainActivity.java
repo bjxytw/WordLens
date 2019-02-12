@@ -4,9 +4,12 @@ import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -54,9 +57,11 @@ public final class MainActivity extends AppCompatActivity
     private ScrollView dictionaryScroll;
     private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
     private String recognizedText;
+    private String searchEngine;
     private boolean paused;
     private boolean flashed;
-    private boolean customTabsOpened;
+    private boolean useCustomTabs;
+    private boolean BrowserOpened;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +79,7 @@ public final class MainActivity extends AppCompatActivity
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
         dictionaryScroll = findViewById(R.id.dictionaryScrollView);
+        ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton searchButton = findViewById(R.id.searchButton);
         ImageButton copyButton = findViewById(R.id.copyButton);
 
@@ -82,6 +88,7 @@ public final class MainActivity extends AppCompatActivity
         flashButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setVisibility(View.GONE);
+        settingsButton.setOnClickListener(buttonListener);
         searchButton.setOnClickListener(buttonListener);
         copyButton.setOnClickListener(buttonListener);
 
@@ -99,32 +106,30 @@ public final class MainActivity extends AppCompatActivity
     }
 
     private void startCameraSource() {
-        if (camera != null) {
-            try {
-                preview.start(camera, cameraCursor);
-            } catch (IOException e) {
-                Log.e(TAG, "Unable to start camera source.", e);
-                camera.release();
-                camera = null;
-            }
+        if (camera == null) return;
+        try {
+            preview.start(camera, cameraCursor);
+        } catch (IOException e) {
+            Log.e(TAG, "Unable to start camera source.", e);
+            camera.release();
+            camera = null;
         }
     }
 
     @Override
     public void onRecognitionResult(String resultText, Rect boundingBox) {
-        if (!paused) {
-            String text = DictionarySearch.removeBothEndSymbol(resultText);
-            if (text != null && !text.equals(recognizedText)) {
-                recognizedText = text;
-                resultTextView.setText(text);
-                DictionaryData data = dictionary.search(text);
-                if (data != null && (linkHistory.size() == 0 ||
-                        !data.wordText().equals(linkHistory.getFirst().wordText()))) {
-                    setDictionaryText(data);
-                    dictionaryBackButton.setVisibility(View.GONE);
-                    linkHistory.clear();
-                    linkHistory.add(data);
-                }
+        if (paused) return;
+        String text = DictionarySearch.removeBothEndSymbol(resultText);
+        if (text != null && !text.equals(recognizedText)) {
+            recognizedText = text;
+            resultTextView.setText(text);
+            DictionaryData data = dictionary.search(text);
+            if (data != null && (linkHistory.size() == 0 ||
+                    !data.wordText().equals(linkHistory.getFirst().wordText()))) {
+                setDictionaryText(data);
+                dictionaryBackButton.setVisibility(View.GONE);
+                linkHistory.clear();
+                linkHistory.add(data);
             }
         }
     }
@@ -134,7 +139,7 @@ public final class MainActivity extends AppCompatActivity
         List<LinkTextData> linkDataList = new ArrayList<>();
         while (matcher.find()) {
             String findText =  matcher.group();
-            if (!findText.equals(data.wordText())) {
+            if (!findText.equalsIgnoreCase(data.wordText())) {
                 linkDataList.add(new LinkTextData(matcher.start(), matcher.end(), findText));
             }
         }
@@ -182,7 +187,8 @@ public final class MainActivity extends AppCompatActivity
         super.onResume();
         setPause(false);
         setFlash(flashed);
-        customTabsOpened = false;
+        loadPreference();
+        BrowserOpened = false;
         startCameraSource();
     }
 
@@ -213,24 +219,62 @@ public final class MainActivity extends AppCompatActivity
         flashed = on;
     }
 
-    private void searchOnBrowser() {
-        if (recognizedText != null) {
-            String searchURL = getString(R.string.google_search_url) + recognizedText;
-            //Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(searchURL));
-            //startActivity(intent);
+    private void loadPreference() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        searchEngine = preferences.getString(SettingsActivity.KEY_SEARCH_ENGINE, "google");
+        useCustomTabs = preferences.getBoolean(SettingsActivity.KEY_CUSTOM_TABS, true);
+    }
 
+    private void searchOnBrowser() {
+        if (recognizedText == null) return;
+
+        StringBuilder searchURL = new StringBuilder();
+        switch (searchEngine) {
+            case "google":
+                searchURL.append(getString(R.string.google_search_url));
+                break;
+            case "yahoo":
+                searchURL.append(getString(R.string.yahoo_search_url));
+                break;
+            case "bing":
+                searchURL.append(getString(R.string.bing_search_url));
+                break;
+            case "wikipedia_jp":
+                searchURL.append(getString(R.string.wikipedia_jp_search_url));
+                break;
+            case "wikipedia_en":
+                searchURL.append(getString(R.string.wikipedia_en_search_url));
+                break;
+            case "eijiro":
+                searchURL.append(getString(R.string.eijiro_search_url));
+                break;
+            default: return;
+        }
+        searchURL.append(recognizedText);
+
+
+        if (useCustomTabs) {
             try {
                 CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
                         .setShowTitle(true)
                         .setToolbarColor(ContextCompat.getColor(this, R.color.colorPrimary))
                         .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                         .build();
-                tabsIntent.launchUrl(this, Uri.parse(searchURL));
-                customTabsOpened = true;
+                tabsIntent.launchUrl(this, Uri.parse(searchURL.toString()));
+                BrowserOpened = true;
             } catch (ActivityNotFoundException e) {
                 Log.e(TAG, e.toString());
                 Toast.makeText(this,
-                        getString(R.string.custom_tabs_exception), Toast.LENGTH_LONG).show();
+                        getString(R.string.custom_tabs_cannot_open), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(searchURL.toString()));
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, e.toString());
+                Toast.makeText(this,
+                        getString(R.string.browser_cannot_open), Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -239,6 +283,10 @@ public final class MainActivity extends AppCompatActivity
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
+                case R.id.settingsButton:
+                    Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                    startActivity(intent);
+                    break;
                 case R.id.pauseButton:
                     if (paused) startCameraSource();
                     else preview.stop();
@@ -267,7 +315,7 @@ public final class MainActivity extends AppCompatActivity
                     }
                     break;
                 case R.id.searchButton:
-                    if (!customTabsOpened)
+                    if (!BrowserOpened)
                         searchOnBrowser();
                     break;
                 case R.id.copyButton:
