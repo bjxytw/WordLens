@@ -1,16 +1,28 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory android:title="検索">
+    <PreferenceCategory android:title="@string/pref_category_search">
         <ListPreference
             android:defaultValue="google"
             android:entries="@array/pref_search_engine_list"
             android:entryValues="@array/pref_search_engine_list_values"
             android:key="search_engine_list"
             android:title="@string/pref_search_engine_title" />
-
         <SwitchPreference
             android:defaultValue="true"
             android:key="custom_tabs_switch"
             android:title="@string/pref_custom_tabs_switch"
             android:summary="@string/pref_custom_tabs_switch_summary" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_camera">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="link_cursor_visible_switch"
+            android:title="@string/pref_cursor_visible_switch"
+            android:summary="@string/pref_cursor_visible_switch_summary" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="link_pause_switch"
+            android:title="@string/pref_link_pause_switch"
+            android:summary="@string/pref_link_pause_switch_summary" />
     </PreferenceCategory>
 </PreferenceScreen>

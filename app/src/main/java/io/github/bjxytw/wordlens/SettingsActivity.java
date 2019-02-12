@@ -14,19 +14,22 @@ import android.view.MenuItem;
 public class SettingsActivity extends PreferenceActivity {
     public static final String KEY_SEARCH_ENGINE = "search_engine_list";
     public static final String KEY_CUSTOM_TABS = "custom_tabs_switch";
-    private AppCompatDelegate delegate;
+    public static final String KEY_CURSOR_VISIBLE = "link_cursor_visible_switch";
+    public static final String KEY_LINK_PAUSE = "link_pause_switch";
+    private AppCompatDelegate appCompatDelegate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        getDelegate().installViewFactory();
-        getDelegate().onCreate(savedInstanceState);
+        AppCompatDelegate delegate = getDelegate();
+        delegate.installViewFactory();
+        delegate.onCreate(savedInstanceState);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
         Toolbar toolbar = findViewById(R.id.toolbar_settings);
-        getDelegate().setSupportActionBar(toolbar);
-        ActionBar actionBar = getDelegate().getSupportActionBar();
+        delegate.setSupportActionBar(toolbar);
+        ActionBar actionBar = delegate.getSupportActionBar();
         if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
 
         getFragmentManager().beginTransaction().replace(R.id.content,
@@ -74,10 +77,9 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private AppCompatDelegate getDelegate() {
-        if (delegate == null) {
-            delegate = AppCompatDelegate.create(this, null);
-        }
-        return delegate;
+        if (appCompatDelegate == null)
+            appCompatDelegate = AppCompatDelegate.create(this, null);
+        return appCompatDelegate;
     }
 
     @Override

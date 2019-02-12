@@ -30,6 +30,9 @@ public class CameraCursorGraphic extends View {
     private RectF cursorRect;
     private RectF recognitionRect;
 
+    private boolean areaVisible;
+
+
     public CameraCursorGraphic(Context context, AttributeSet attrs) {
         super(context, attrs);
         getViewTreeObserver().addOnGlobalLayoutListener(
@@ -62,6 +65,7 @@ public class CameraCursorGraphic extends View {
         areaPaint.setAntiAlias(true);
 
         setCursorRecognising(false);
+        areaVisible = false;
     }
 
     public void setCursorRecognising(boolean recognising) {
@@ -105,12 +109,16 @@ public class CameraCursorGraphic extends View {
         return cameraRecognitionRect;
     }
 
+    public void setAreaVisible(boolean visible) {
+        areaVisible = visible;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         synchronized (lock) {
             drawCursor(canvas);
-            drawArea(canvas);
+            if (areaVisible) drawArea(canvas);
         }
     }
 

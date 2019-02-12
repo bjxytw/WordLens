@@ -60,8 +60,10 @@ public final class MainActivity extends AppCompatActivity
     private String searchEngine;
     private boolean paused;
     private boolean flashed;
-    private boolean useCustomTabs;
     private boolean BrowserOpened;
+    private boolean useCustomTabs;
+    private boolean cursorVisible;
+    private boolean linkToPause;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,6 +118,14 @@ public final class MainActivity extends AppCompatActivity
         }
     }
 
+    private void loadPreference() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        searchEngine = preferences.getString(SettingsActivity.KEY_SEARCH_ENGINE, "google");
+        useCustomTabs = preferences.getBoolean(SettingsActivity.KEY_CUSTOM_TABS, true);
+        cursorVisible = preferences.getBoolean(SettingsActivity.KEY_CURSOR_VISIBLE, false);
+        linkToPause = preferences.getBoolean(SettingsActivity.KEY_LINK_PAUSE, false);
+    }
+
     @Override
     public void onRecognitionResult(String resultText, Rect boundingBox) {
         if (paused) return;
@@ -152,8 +162,13 @@ public final class MainActivity extends AppCompatActivity
                     @Override
                     public void onClick(@NonNull View widget) {
                         setDictionaryText(linkDictionaryData);
+                        if (linkHistory.size() <= 1)
+                            dictionaryBackButton.setVisibility(View.VISIBLE);
                         linkHistory.add(linkDictionaryData);
-                        dictionaryBackButton.setVisibility(View.VISIBLE);
+                        if (linkToPause) {
+                            stop();
+                            setPause(true);
+                        }
                     }
                 }, linkData.getStart(), linkData.getEnd(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
@@ -188,6 +203,7 @@ public final class MainActivity extends AppCompatActivity
         setPause(false);
         setFlash(flashed);
         loadPreference();
+        cameraCursor.setAreaVisible(cursorVisible);
         BrowserOpened = false;
         startCameraSource();
     }
@@ -195,7 +211,7 @@ public final class MainActivity extends AppCompatActivity
     @Override
     protected void onPause() {
         Log.d(TAG, "onPause");
-        preview.stop();
+        stop();
         super.onPause();
     }
 
@@ -219,10 +235,8 @@ public final class MainActivity extends AppCompatActivity
         flashed = on;
     }
 
-    private void loadPreference() {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        searchEngine = preferences.getString(SettingsActivity.KEY_SEARCH_ENGINE, "google");
-        useCustomTabs = preferences.getBoolean(SettingsActivity.KEY_CUSTOM_TABS, true);
+    private void stop() {
+        preview.stop();
     }
 
     private void searchOnBrowser() {
@@ -251,7 +265,6 @@ public final class MainActivity extends AppCompatActivity
             default: return;
         }
         searchURL.append(recognizedText);
-
 
         if (useCustomTabs) {
             try {
@@ -289,7 +302,7 @@ public final class MainActivity extends AppCompatActivity
                     break;
                 case R.id.pauseButton:
                     if (paused) startCameraSource();
-                    else preview.stop();
+                    else stop();
                     setPause(!paused);
                     break;
                 case R.id.flashButton:
