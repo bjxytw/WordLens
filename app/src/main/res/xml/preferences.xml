@@ -25,4 +25,10 @@
             android:title="@string/pref_link_pause_switch"
             android:summary="@string/pref_link_pause_switch_summary" />
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_others">
+        <Preference
+            android:key="license"
+            android:title="@string/pref_license" />
+    </PreferenceCategory>
 </PreferenceScreen>

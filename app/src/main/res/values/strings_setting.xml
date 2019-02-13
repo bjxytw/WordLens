@@ -3,6 +3,7 @@
     <string name="title_activity_settings">設定</string>
     <string name="pref_category_search">検索</string>
     <string name="pref_category_camera">カメラ</string>
+    <string name="pref_category_others">その他</string>
 
     <string name="pref_search_engine_title">検索エンジン</string>
     <string-array name="pref_search_engine_list">
@@ -29,6 +30,8 @@
     <string name="pref_cursor_visible_switch_summary">文字の認識範囲を表示する</string>
 
     <string name="pref_link_pause_switch">リンク押下で一時停止</string>
-    <string name="pref_link_pause_switch_summary">辞書のリンクを押した際に一時停止する</string>
+    <string name="pref_link_pause_switch_summary">辞書内のリンクを押した際に一時停止</string>
+
+    <string name="pref_license">ライセンス</string>
 
 </resources>

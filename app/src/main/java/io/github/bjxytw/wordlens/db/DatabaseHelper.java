@@ -19,7 +19,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final int COPY_BUFFER_SIZE = 1024;
     private Context context;
     private File databasePath;
-    private boolean databaseExist = true;
 
     DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -28,22 +27,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onCreate(SQLiteDatabase db) {
-        super.onOpen(db);
-        databaseExist = false;
-    }
+    public void onCreate(SQLiteDatabase db) {}
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
 
     @Override
     public SQLiteDatabase getReadableDatabase() {
-        SQLiteDatabase database = super.getReadableDatabase();
-        if (databaseExist) {
+        if (databasePath.exists()) {
             Log.i(TAG, "Database exists.");
-            return database;
+            return super.getReadableDatabase();
         } else {
-            database.close();
             try {
                 return copyDatabase();
             } catch (IOException e) {
@@ -62,7 +56,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 output.write(buffer, 0, size);
             Log.i(TAG, "Copied database from assets.");
         }
-        databaseExist = true;
         return super.getWritableDatabase();
     }
 }

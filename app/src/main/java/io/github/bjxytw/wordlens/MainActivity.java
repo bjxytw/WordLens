@@ -38,6 +38,8 @@ import io.github.bjxytw.wordlens.data.DictionaryData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
 import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 import io.github.bjxytw.wordlens.data.LinkTextData;
+import io.github.bjxytw.wordlens.settings.SettingsActivity;
+import io.github.bjxytw.wordlens.settings.SettingsFragment;
 
 public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener {
@@ -120,10 +122,10 @@ public final class MainActivity extends AppCompatActivity
 
     private void loadPreference() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        searchEngine = preferences.getString(SettingsActivity.KEY_SEARCH_ENGINE, "google");
-        useCustomTabs = preferences.getBoolean(SettingsActivity.KEY_CUSTOM_TABS, true);
-        cursorVisible = preferences.getBoolean(SettingsActivity.KEY_CURSOR_VISIBLE, false);
-        linkToPause = preferences.getBoolean(SettingsActivity.KEY_LINK_PAUSE, false);
+        searchEngine = preferences.getString(SettingsFragment.KEY_SEARCH_ENGINE, "google");
+        useCustomTabs = preferences.getBoolean(SettingsFragment.KEY_CUSTOM_TABS, true);
+        cursorVisible = preferences.getBoolean(SettingsFragment.KEY_CURSOR_VISIBLE, false);
+        linkToPause = preferences.getBoolean(SettingsFragment.KEY_LINK_PAUSE, false);
     }
 
     @Override
