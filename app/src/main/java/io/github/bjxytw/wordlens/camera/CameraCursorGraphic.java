@@ -51,7 +51,8 @@ public class CameraCursorGraphic extends View {
 
                         recognitionRect = new RectF(
                                 cursorX - recognitionAreaRadiusX, cursorY - recognitionAreaRadiusY,
-                                cursorX + recognitionAreaRadiusX, cursorY + recognitionAreaRadiusY);                    }
+                                cursorX + recognitionAreaRadiusX, cursorY + recognitionAreaRadiusY);
+                    }
                 });
         cursorPaint = new Paint();
         cursorPaint.setStyle(Paint.Style.STROKE);
@@ -64,11 +65,11 @@ public class CameraCursorGraphic extends View {
         areaPaint.setColor(RECOGNITION_AREA_COLOR);
         areaPaint.setAntiAlias(true);
 
-        setCursorRecognising(false);
+        setCursorRecognizing(false);
         areaVisible = false;
     }
 
-    public void setCursorRecognising(boolean recognising) {
+    public void setCursorRecognizing(boolean recognising) {
         synchronized (lock) {
             if (recognising) cursorPaint.setColor(CURSOR_RECOGNISING_COLOR);
             else cursorPaint.setColor(CURSOR_COLOR);

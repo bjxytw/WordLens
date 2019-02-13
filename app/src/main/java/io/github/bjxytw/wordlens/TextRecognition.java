@@ -32,7 +32,7 @@ public class TextRecognition {
     private ImageData processingImageData;
 
     public interface TextRecognitionListener {
-        void onRecognitionResult(String result, Rect boundingBox);
+        void onRecognitionResult(String result);
     }
 
     TextRecognition(CameraCursorGraphic overlay) {
@@ -102,10 +102,10 @@ public class TextRecognition {
         }
 
         if (detectedElement != null) {
-            cursor.setCursorRecognising(true);
+            cursor.setCursorRecognizing(true);
             String text = detectedElement.getText();
-            listener.onRecognitionResult(text, detectedElement.getBoundingBox());
-        } else cursor.setCursorRecognising(false);
+            listener.onRecognitionResult(text);
+        } else cursor.setCursorRecognizing(false);
         cursor.postInvalidate();
 
         processingImageData = null;

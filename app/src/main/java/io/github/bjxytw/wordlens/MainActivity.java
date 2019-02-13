@@ -6,7 +6,6 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -129,10 +128,10 @@ public final class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onRecognitionResult(String resultText, Rect boundingBox) {
+    public void onRecognitionResult(String resultText) {
         if (paused) return;
         String text = DictionarySearch.removeBothEndSymbol(resultText);
-        if (text != null && !text.equals(recognizedText)) {
+        if (text != null && dictionary != null && !text.equals(recognizedText)) {
             recognizedText = text;
             resultTextView.setText(text);
             DictionaryData data = dictionary.search(text);
