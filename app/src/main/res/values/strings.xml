@@ -6,4 +6,5 @@
     <string name="copied_message">コピーしました</string>
     <string name="browser_cannot_open">ブラウザを開けません。</string>
     <string name="custom_tabs_cannot_open">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
+    <string name="tutorial_message">画面をタップしてフォーカス</string>
 </resources>

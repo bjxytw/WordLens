@@ -24,7 +24,7 @@
     </string-array>
 
     <string name="pref_custom_tabs_switch">Chromeカスタムタブを使用する</string>
-    <string name="pref_custom_tabs_switch_summary">Chrome Custom Tabsを使用して高速に検索結果を開く</string>
+    <string name="pref_custom_tabs_switch_summary">Chrome Custom Tabsを使用して検索結果を開く</string>
 
     <string name="pref_cursor_visible_switch">認識範囲を表示</string>
     <string name="pref_cursor_visible_switch_summary">文字の認識範囲を表示する</string>

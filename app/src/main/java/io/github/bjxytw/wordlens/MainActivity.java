@@ -6,10 +6,15 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.customtabs.CustomTabsIntent;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.AppLaunchChecker;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
@@ -17,8 +22,10 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,6 +59,7 @@ public final class MainActivity extends AppCompatActivity
     private ImageButton pauseButton;
     private ImageButton flashButton;
     private ImageButton dictionaryBackButton;
+    private ImageButton copyButton;
     private TextView resultTextView;
     private TextView headTextView;
     private TextView meanTextView;
@@ -84,7 +92,7 @@ public final class MainActivity extends AppCompatActivity
         dictionaryScroll = findViewById(R.id.dictionaryScrollView);
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton searchButton = findViewById(R.id.searchButton);
-        ImageButton copyButton = findViewById(R.id.copyButton);
+        copyButton = findViewById(R.id.copyButton);
 
         ButtonClick buttonListener = new ButtonClick();
         pauseButton.setOnClickListener(buttonListener);
@@ -106,6 +114,38 @@ public final class MainActivity extends AppCompatActivity
     private void createSources() {
         if (dictionary == null) dictionary = new DictionarySearch(this);
         if (camera == null) camera = new CameraSource(textRecognition);
+
+        if (!AppLaunchChecker.hasStartedFromLauncher(getApplicationContext())) {
+            showTutorialWindow(this, cameraCursor);
+            AppLaunchChecker.onActivityCreate(this);
+        }
+    }
+
+    private static void showTutorialWindow(final Context context, final View view) {
+        view.post(new Runnable() {
+            @Override
+            public void run() {
+                final PopupWindow tutorialPopup = new PopupWindow(context);
+                TextView tutorialText = new TextView(context);
+                tutorialText.setText(context.getString(R.string.tutorial_message));
+                tutorialText.setTextColor(Color.WHITE);
+                tutorialText.setTextSize(17.0f);
+                tutorialText.setShadowLayer(3.5f, 0.0f, 0.0f,
+                        ContextCompat.getColor(context, R.color.colorPopupShadow));
+                tutorialPopup.setContentView(tutorialText);
+                tutorialPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                tutorialPopup.setOutsideTouchable(true);
+                tutorialPopup.setAnimationStyle(R.style.PopupAnimation);
+                tutorialPopup.showAtLocation(view, Gravity.TOP, 0, 120);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        tutorialPopup.dismiss();
+                    }
+                }, 6000L);
+            }
+        });
     }
 
     private void startCameraSource() {
@@ -241,8 +281,6 @@ public final class MainActivity extends AppCompatActivity
     }
 
     private void searchOnBrowser() {
-        if (recognizedText == null) return;
-
         StringBuilder searchURL = new StringBuilder();
         switch (searchEngine) {
             case "google":
@@ -293,6 +331,25 @@ public final class MainActivity extends AppCompatActivity
         }
     }
 
+    private void copyToClipboard() {
+        ClipboardManager clipboardManager =
+                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        View view = findViewById(android.R.id.content);
+        if (clipboardManager == null || view == null) return;
+
+        copyButton.setEnabled(false);
+        new Handler().postDelayed(new Runnable() {
+            public void run() {
+                copyButton.setEnabled(true);
+            }
+        }, 2000L);
+
+        clipboardManager.setPrimaryClip(
+                ClipData.newPlainText("recognizedText", recognizedText));
+        Snackbar.make(view, getString(R.string.copied_message), Snackbar.LENGTH_SHORT).show();
+
+    }
+
     private class ButtonClick implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -329,20 +386,12 @@ public final class MainActivity extends AppCompatActivity
                     }
                     break;
                 case R.id.searchButton:
-                    if (!BrowserOpened)
+                    if (!BrowserOpened && recognizedText != null)
                         searchOnBrowser();
                     break;
                 case R.id.copyButton:
-                    if (recognizedText != null) {
-                        ClipboardManager clipboardManager =
-                                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                        if (clipboardManager != null) {
-                            clipboardManager.setPrimaryClip(
-                                    ClipData.newPlainText("recognizedText", recognizedText));
-                            Toast.makeText(MainActivity.this,
-                                    getString(R.string.copied_message), Toast.LENGTH_SHORT).show();
-                        }
-                    }
+                    if (recognizedText != null)
+                        copyToClipboard();
             }
         }
     }

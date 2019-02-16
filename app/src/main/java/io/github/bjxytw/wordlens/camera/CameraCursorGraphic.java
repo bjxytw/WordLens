@@ -10,6 +10,8 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
+import androidx.annotation.FloatRange;
+
 
 public class CameraCursorGraphic extends View {
     private static final int CURSOR_COLOR = Color.CYAN;
@@ -17,9 +19,11 @@ public class CameraCursorGraphic extends View {
     private static final int CURSOR_AREA_SIZE = 90;
     private static final float CURSOR_STROKE_WIDTH = 4.0f;
 
-    private static final int RECOGNITION_AREA_WIDTH = 600;
-    private static final int RECOGNITION_AREA_HEIGHT = 200;
     private static final int RECOGNITION_AREA_COLOR = Color.LTGRAY;
+    @FloatRange(from = 0.0, to = 1.0)
+    private static final float RECOGNITION_AREA_WIDTH_RATIO = 0.6f;
+    @FloatRange(from = 0.0, to = 1.0)
+    private static final float RECOGNITION_AREA_HEIGHT_RATIO = 0.25f;
 
     private final Object lock = new Object();
     private final Paint cursorPaint;
@@ -42,8 +46,8 @@ public class CameraCursorGraphic extends View {
                         float cursorX = getWidth() * 0.5f;
                         float cursorY = getHeight() * 0.5f;
                         float cursorAreaRadius = CURSOR_AREA_SIZE * 0.5f;
-                        float recognitionAreaRadiusX = RECOGNITION_AREA_WIDTH * 0.5f;
-                        float recognitionAreaRadiusY = RECOGNITION_AREA_HEIGHT * 0.5f;
+                        float recognitionAreaRadiusX = getWidth() * RECOGNITION_AREA_WIDTH_RATIO * 0.5f;
+                        float recognitionAreaRadiusY = getHeight() * RECOGNITION_AREA_HEIGHT_RATIO * 0.5f;
 
                         cursorRect = new RectF(
                                 cursorX - cursorAreaRadius, cursorY - cursorAreaRadius,
@@ -93,7 +97,7 @@ public class CameraCursorGraphic extends View {
         }
     }
 
-    private void translateRect(RectF viewRect, Rect cameraRect,
+    private static void translateRect(RectF viewRect, Rect cameraRect,
                                float widthScaleFactor, float heightScaleFactor, int previewWidth) {
         new RectF(viewRect.top * heightScaleFactor,
                 (previewWidth - viewRect.right) * widthScaleFactor,
