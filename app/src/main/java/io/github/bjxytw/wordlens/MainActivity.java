@@ -130,7 +130,7 @@ public final class MainActivity extends AppCompatActivity
                 tutorialText.setText(context.getString(R.string.tutorial_message));
                 tutorialText.setTextColor(Color.WHITE);
                 tutorialText.setTextSize(17.0f);
-                tutorialText.setShadowLayer(3.5f, 0.0f, 0.0f,
+                tutorialText.setShadowLayer(2.0f, 0.0f, 0.0f,
                         ContextCompat.getColor(context, R.color.colorPopupShadow));
                 tutorialPopup.setContentView(tutorialText);
                 tutorialPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
