@@ -166,7 +166,7 @@ public class CameraSource {
                 camera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
-                        Log.d(TAG, "onAutoFocus: " + success);
+                        Log.i(TAG, "AutoFocus: " + success);
                     }
                 });
             }
@@ -262,7 +262,7 @@ public class CameraSource {
                 }
 
                 if (!byteArrayToByteBuffer.containsKey(data)) {
-                    Log.d(TAG, "Could not find ByteBuffer associated with the image data.");
+                    Log.w(TAG, "Could not find ByteBuffer associated with the image data.");
                     return;
                 }
                 processingData = byteArrayToByteBuffer.get(data);

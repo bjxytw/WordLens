@@ -23,7 +23,7 @@ import java.util.List;
 
 public class TextRecognition {
 
-    private static final String TAG = "TextRec";
+    private static final String TAG = "TextRecognition";
 
     private final FirebaseVisionTextRecognizer detector;
     private final CameraCursorGraphic cursor;
@@ -73,7 +73,6 @@ public class TextRecognition {
                 .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText results) {
-                        Log.i(TAG, "Detected an image.");
                         processResult(results);
                     }
                 })

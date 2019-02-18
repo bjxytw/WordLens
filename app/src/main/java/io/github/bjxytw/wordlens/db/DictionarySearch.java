@@ -8,7 +8,6 @@ import io.github.bjxytw.wordlens.data.DictionaryData;
 
 
 public class DictionarySearch {
-    private static final String TAG = "DicSearch";
     private static final String REGEX_SYMBOL = "[!-/:-@\\[-`{-~]";
     private static final String SQL_SEARCH = "SELECT * FROM items WHERE word COLLATE nocase=?";
     private static final String WORD_COL = "word";

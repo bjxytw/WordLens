@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -76,7 +77,6 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
@@ -106,7 +106,7 @@ public final class MainActivity extends AppCompatActivity
         textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
 
-        if (PermissionUtil.isAllPermissionsGranted(this))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
             createSources();
         else PermissionUtil.getPermissions(this);
     }
@@ -153,7 +153,7 @@ public final class MainActivity extends AppCompatActivity
         try {
             preview.start(camera, cameraCursor);
         } catch (IOException e) {
-            Log.e(TAG, "Unable to start camera source.", e);
+            Log.e(TAG, "failed to start camera source.", e);
             camera.release();
             camera = null;
         }
@@ -239,7 +239,6 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     public void onResume() {
-        Log.d(TAG, "onResume");
         super.onResume();
         setPause(false);
         setFlash(flashed);
@@ -251,14 +250,12 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause");
         stop();
         super.onPause();
     }
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "onDestroy");
         if (camera != null) camera.release();
         if (dictionary != null) dictionary.close();
         super.onDestroy();
