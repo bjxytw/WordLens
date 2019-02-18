@@ -35,24 +35,24 @@ public class CameraSource {
 
     private static final String TAG = "CameraSource";
 
-    private final Map<byte[], ByteBuffer> bytesToByteBuffer = new IdentityHashMap<>();
+    private final Map<byte[], ByteBuffer> byteArrayToByteBuffer = new IdentityHashMap<>();
 
-    private final FrameProcessingRunnable processingRunnable;
-    private final Object processorLock = new Object();
+    private final ProcessRunnable processRunnable;
+    private final Object processLock = new Object();
 
-    private Thread processingThread;
-    private TextRecognition frameProcessor;
+    private Thread processThread;
+    private TextRecognition textRecognition;
     private Camera camera;
     private Size size;
+    private List<Camera.Area> focusArea;
 
     private boolean supportedAutoFocus;
     private boolean supportedFlash;
     private boolean flashed;
-    private List<Camera.Area> focusArea;
 
-    public CameraSource(TextRecognition frameProcessor) {
-        processingRunnable = new FrameProcessingRunnable();
-        this.frameProcessor = frameProcessor;
+    public CameraSource(TextRecognition textRecognition) {
+        processRunnable = new ProcessRunnable();
+        this.textRecognition = textRecognition;
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)
@@ -63,20 +63,20 @@ public class CameraSource {
         camera.setPreviewDisplay(surfaceHolder);
         camera.startPreview();
 
-        processingThread = new Thread(processingRunnable);
-        processingRunnable.setActive(true);
-        processingThread.start();
+        processThread = new Thread(processRunnable);
+        processRunnable.setActive(true);
+        processThread.start();
     }
 
     synchronized void stop() {
-        processingRunnable.setActive(false);
-        if (processingThread != null) {
+        processRunnable.setActive(false);
+        if (processThread != null) {
             try {
-                processingThread.join();
+                processThread.join();
             } catch (InterruptedException e) {
-                Log.d(TAG, "Frame processing thread interrupted on release.");
+                Log.e(TAG, e.toString());
             }
-            processingThread = null;
+            processThread = null;
         }
 
         if (camera != null) {
@@ -85,38 +85,38 @@ public class CameraSource {
             try {
                 camera.setPreviewDisplay(null);
             } catch (Exception e) {
-                Log.e(TAG, "Failed to clear camera preview: " + e);
+                Log.e(TAG, e.toString());
             }
             camera.release();
             camera = null;
         }
-        bytesToByteBuffer.clear();
+        byteArrayToByteBuffer.clear();
     }
 
     public void release() {
-        synchronized (processorLock) {
+        synchronized (processLock) {
             stop();
-            if (frameProcessor != null)
-                frameProcessor.stop();
+            if (textRecognition != null)
+                textRecognition.stop();
         }
     }
 
     private Camera createCamera() throws IOException {
         int requestedCameraId = getIdForRequestedCamera();
         if (requestedCameraId == -1)
-            throw new IOException("Could not find requested camera.");
+            throw new IOException("Could not find camera.");
         Camera camera = Camera.open(requestedCameraId);
 
         Size previewSize = selectPreviewSize(camera);
         if (previewSize == null)
-            throw new IOException("Could not find suitable preview size.");
+            throw new IOException("Could not find preview size.");
         size = previewSize;
 
         Log.i(TAG, "Selected preview size: " + this.size.toString());
 
-        int[] previewFpsRange = selectPreviewFpsRange(camera);
+        int[] previewFpsRange = selectFpsRange(camera);
         if (previewFpsRange == null)
-            throw new IOException("Could not find suitable preview frames per second range.");
+            throw new IOException("Could not find FPS range.");
 
         int minFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
         int maxFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
@@ -152,12 +152,6 @@ public class CameraSource {
         camera.setParameters(parameters);
 
         camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
-
-        // Four frame buffers are needed for working with the camera.
-        //camera.addCallbackBuffer(createPreviewBuffer(size));
-        //camera.addCallbackBuffer(createPreviewBuffer(size));
-        //camera.addCallbackBuffer(createPreviewBuffer(size));
-
         camera.addCallbackBuffer(createPreviewBuffer(size));
 
         return camera;
@@ -231,28 +225,27 @@ public class CameraSource {
         byte[] byteArray = new byte[bufferSize];
         ByteBuffer buffer = ByteBuffer.wrap(byteArray);
         if (!buffer.hasArray() || (buffer.array() != byteArray))
-            throw new IllegalStateException("Failed to create valid buffer for camera source.");
+            throw new IllegalStateException("Failed to create buffer.");
 
-        bytesToByteBuffer.put(byteArray, buffer);
+        byteArrayToByteBuffer.put(byteArray, buffer);
         return byteArray;
     }
 
     private class CameraPreviewCallback implements Camera.PreviewCallback {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
-            processingRunnable.setNextFrame(data, camera);
+            processRunnable.setNextFrame(data, camera);
         }
     }
 
-    private class FrameProcessingRunnable implements Runnable {
+    private class ProcessRunnable implements Runnable {
 
         private final Object lock = new Object();
         private boolean active = true;
 
-        private ByteBuffer pendingFrameData;
+        private ByteBuffer processingData;
 
-        FrameProcessingRunnable() {
-        }
+        ProcessRunnable() {}
 
         void setActive(boolean active) {
             synchronized (lock) {
@@ -263,17 +256,16 @@ public class CameraSource {
 
         void setNextFrame(byte[] data, Camera camera) {
             synchronized (lock) {
-                if (pendingFrameData != null) {
-                    camera.addCallbackBuffer(pendingFrameData.array());
-                    pendingFrameData = null;
+                if (processingData != null) {
+                    camera.addCallbackBuffer(processingData.array());
+                    processingData = null;
                 }
 
-                if (!bytesToByteBuffer.containsKey(data)) {
-                    Log.d(TAG, "Skipping frame. Could not find ByteBuffer associated "
-                            + "with the image data from the camera.");
+                if (!byteArrayToByteBuffer.containsKey(data)) {
+                    Log.d(TAG, "Could not find ByteBuffer associated with the image data.");
                     return;
                 }
-                pendingFrameData = bytesToByteBuffer.get(data);
+                processingData = byteArrayToByteBuffer.get(data);
                 lock.notifyAll();
             }
         }
@@ -284,27 +276,25 @@ public class CameraSource {
 
             while (true) {
                 synchronized (lock) {
-                    while (active && (pendingFrameData == null)) {
+                    while (active && (processingData == null)) {
                         try {
                             lock.wait();
                         } catch (InterruptedException e) {
-                            Log.d(TAG, "Frame processing loop terminated.", e);
+                            Log.e(TAG, e.toString());
                             return;
                         }
                     }
-
                     if (!active) return;
 
-                    data = pendingFrameData;
-                    pendingFrameData = null;
+                    data = processingData;
+                    processingData = null;
                 }
-
                 try {
-                    synchronized (processorLock) {
-                        frameProcessor.process(new ImageData(data, size.getWidth(), size.getHeight()));
+                    synchronized (processLock) {
+                        textRecognition.process(new ImageData(data, size.getWidth(), size.getHeight()));
                     }
                 } catch (Throwable t) {
-                    Log.e(TAG, "Exception thrown from receiver.", t);
+                    Log.e(TAG, t.toString());
                 } finally {
                     camera.addCallbackBuffer(data.array());
                 }
@@ -315,15 +305,15 @@ public class CameraSource {
 
     private static Size selectPreviewSize(Camera camera) {
         Camera.Parameters parameters = camera.getParameters();
-        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-        List<Size> validPreviewSizes = new ArrayList<>();
+        List<Camera.Size> supportedSizeList = parameters.getSupportedPreviewSizes();
+        List<Size> validSizeList = new ArrayList<>();
         Size selectedPreviewSize = null;
 
-        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes)
-            validPreviewSizes.add(new Size(previewSize.width, previewSize.height));
+        for (android.hardware.Camera.Size previewSize : supportedSizeList)
+            validSizeList.add(new Size(previewSize.width, previewSize.height));
 
         int minDiff = Integer.MAX_VALUE;
-        for (Size previewSize : validPreviewSizes) {
+        for (Size previewSize : validSizeList) {
             int diff = Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
                             + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
             if (diff < minDiff) {
@@ -331,22 +321,18 @@ public class CameraSource {
                 minDiff = diff;
             }
         }
-
         return selectedPreviewSize;
     }
 
-    private static int[] selectPreviewFpsRange(Camera camera) {
-
-        int desiredPreviewFpsScaled = (int) (REQUESTED_FPS * 1000.0f);
-
+    private static int[] selectFpsRange(Camera camera) {
+        int fpsScale = (int) (REQUESTED_FPS * 1000.0f);
         int[] selectedFpsRange = null;
         int minDiff = Integer.MAX_VALUE;
-        List<int[]> previewFpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
-        for (int[] range : previewFpsRangeList) {
-
-            int deltaMin = desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
-            int deltaMax = desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
-            int diff = Math.abs(deltaMin) + Math.abs(deltaMax);
+        List<int[]> fpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
+        for (int[] range : fpsRangeList) {
+            int min = fpsScale - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
+            int max = fpsScale - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
+            int diff = Math.abs(min) + Math.abs(max);
             if (diff < minDiff) {
                 selectedFpsRange = range;
                 minDiff = diff;

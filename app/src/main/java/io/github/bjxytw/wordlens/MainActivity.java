@@ -202,10 +202,10 @@ public final class MainActivity extends AppCompatActivity
                 spanMeanText.setSpan(new ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        setDictionaryText(linkDictionaryData);
                         if (linkHistory.size() <= 1)
                             dictionaryBackButton.setVisibility(View.VISIBLE);
                         linkHistory.add(linkDictionaryData);
+                        setDictionaryText(linkDictionaryData);
                         if (linkToPause) {
                             stop();
                             setPause(true);

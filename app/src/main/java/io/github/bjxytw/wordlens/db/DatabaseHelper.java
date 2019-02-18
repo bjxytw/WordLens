@@ -39,7 +39,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             return super.getReadableDatabase();
         } else {
             try {
-                return copyDatabase();
+                return copyFromAssets();
             } catch (IOException e) {
                 Log.e(TAG, "Database copy failed.", e);
                 return null;
@@ -47,7 +47,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private SQLiteDatabase copyDatabase() throws IOException{
+    private SQLiteDatabase copyFromAssets() throws IOException{
         try (InputStream input = context.getAssets().open(DB_SOURCE_NAME);
              OutputStream output = new FileOutputStream(databasePath)) {
             byte[] buffer = new byte[COPY_BUFFER_SIZE];
@@ -56,6 +56,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 output.write(buffer, 0, size);
             Log.i(TAG, "Copied database from assets.");
         }
-        return super.getWritableDatabase();
+        return super.getReadableDatabase();
     }
 }

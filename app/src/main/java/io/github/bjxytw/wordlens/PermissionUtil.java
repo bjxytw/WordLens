@@ -6,24 +6,24 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class PermissionUtil {
+    private static final String TAG = "PermissionUtil";
     private static final int REQUEST_CODE = 1;
 
     static void getPermissions(Activity activity) {
         List<String> permissions = new ArrayList<>();
         for (String permission : getRequiredPermissionList(activity)) {
-
             if (isPermissionDenied(activity, permission))
                 permissions.add(permission);
         }
-
         if (!permissions.isEmpty())
-            ActivityCompat.requestPermissions(activity,
-                    permissions.toArray(new String[0]), REQUEST_CODE);
+            ActivityCompat.requestPermissions(
+                    activity, permissions.toArray(new String[0]), REQUEST_CODE);
     }
 
     static boolean isAllPermissionsGranted(Activity activity) {
@@ -48,6 +48,7 @@ class PermissionUtil {
             else return new String[0];
 
         } catch (Exception e) {
+            Log.e(TAG, e.toString());
             return new String[0];
         }
     }

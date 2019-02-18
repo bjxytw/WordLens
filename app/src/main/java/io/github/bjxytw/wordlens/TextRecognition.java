@@ -29,15 +29,15 @@ public class TextRecognition {
     private final CameraCursorGraphic cursor;
 
     private TextRecognitionListener listener;
-    private ImageData processingImageData;
+    private ImageData processingData;
 
     public interface TextRecognitionListener {
         void onRecognitionResult(String result);
     }
 
-    TextRecognition(CameraCursorGraphic overlay) {
+    TextRecognition(CameraCursorGraphic cursor) {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
-        cursor = overlay;
+        this.cursor = cursor;
     }
 
     void setListener(TextRecognitionListener listener) {
@@ -45,9 +45,9 @@ public class TextRecognition {
     }
 
     public void process(ImageData data) {
-        if (data != null && processingImageData == null) {
-            processingImageData = data;
-            detectImage(processingImageData);
+        if (data != null && processingData == null) {
+            processingData = data;
+            detectImage(processingData);
         }
     }
 
@@ -55,7 +55,7 @@ public class TextRecognition {
         try {
             detector.close();
         } catch (IOException e) {
-            Log.e(TAG, "Exception thrown while trying to close Text Detector: " + e);
+            Log.e(TAG, e.toString());
         }
     }
 
@@ -94,21 +94,19 @@ public class TextRecognition {
                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
                 for (int k = 0; k < elements.size(); k++) {
                     FirebaseVisionText.Element element = elements.get(k);
-                    if (isCursorOnBox(cursor.getCameraCursorRect(),
-                            element.getBoundingBox()))
+                    if (isCursorOnBox(cursor.getCameraCursorRect(), element.getBoundingBox()))
                         detectedElement = element;
                 }
             }
         }
 
-        if (detectedElement != null) {
+        if (detectedElement != null && listener != null) {
             cursor.setCursorRecognizing(true);
-            String text = detectedElement.getText();
-            listener.onRecognitionResult(text);
+            listener.onRecognitionResult(detectedElement.getText());
         } else cursor.setCursorRecognizing(false);
         cursor.postInvalidate();
 
-        processingImageData = null;
+        processingData = null;
     }
 
     private ByteBuffer fillImageMargin(ImageData data) {

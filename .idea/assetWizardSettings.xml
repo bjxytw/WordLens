@@ -61,8 +61,8 @@
                                   <option name="values">
                                     <map>
                                       <entry key="backgroundAssetType" value="COLOR" />
-                                      <entry key="backgroundColor" value="607d8b" />
-                                      <entry key="foregroundImage" value="$USER_HOME$/icon_plain.svg" />
+                                      <entry key="backgroundColor" value="00deaa" />
+                                      <entry key="foregroundImage" value="$USER_HOME$/icon_plain2.svg" />
                                       <entry key="previewDensity" value="XXXHIGH" />
                                     </map>
                                   </option>
