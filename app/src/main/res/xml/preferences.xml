@@ -30,5 +30,9 @@
         <Preference
             android:key="license"
             android:title="@string/pref_license" />
+        <Preference android:title="@string/pref_privacy_policy">
+            <intent android:action="android.intent.action.VIEW"
+                android:data="@string/privacy_policy_url" />
+        </Preference>
     </PreferenceCategory>
 </PreferenceScreen>

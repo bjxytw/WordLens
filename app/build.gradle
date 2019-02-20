@@ -4,6 +4,14 @@ apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 apply plugin: 'io.fabric'
 
 android {
+    signingConfigs {
+        wordlens {
+            keyAlias 'wordlens'
+            keyPassword 'bqUxzC5uBrk2'
+            storeFile file('/home/sk/StudioProjects/WordLens/wordlens.jks')
+            storePassword 'nEx76gX5RX9k'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "io.github.bjxytw.wordlens"
@@ -30,6 +38,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.wordlens
         }
     }
     packagingOptions {
@@ -38,7 +47,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:support-v4:28.0.0'

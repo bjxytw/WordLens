@@ -33,5 +33,6 @@
     <string name="pref_link_pause_switch_summary">辞書内のリンクを押した際に一時停止</string>
 
     <string name="pref_license">ライセンス</string>
+    <string name="pref_privacy_policy">プライバシーポリシー</string>
 
 </resources>

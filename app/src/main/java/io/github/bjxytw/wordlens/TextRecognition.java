@@ -115,27 +115,28 @@ public class TextRecognition {
         int width = data.getWidth();
         int height = data.getHeight();
         int size = width * height;
+        byte initValue = (byte) 0;
 
         Rect area = cursor.getCameraRecognitionRect();
         if (area != null) {
-            Arrays.fill(array, 0, area.top * width, (byte) 0);
+            Arrays.fill(array, 0, area.top * width, initValue);
             Arrays.fill(array, width * area.bottom,
-                    size + half(area.top * width), (byte) 0);
+                    size + half(area.top * width), initValue);
             Arrays.fill(array, size + half(width * area.bottom),
-                    array.length, (byte) 0);
+                    array.length, initValue);
 
             for (int i = area.top; i < area.bottom; i++) {
                 int offset = i * width;
-                Arrays.fill(array, offset, offset + area.left, (byte) 0);
+                Arrays.fill(array, offset, offset + area.left, initValue);
                 Arrays.fill(array, offset + area.right,
-                        offset + width, (byte) 0);
+                        offset + width, initValue);
             }
 
             for (int i = half(area.top); i < half(area.bottom); i++) {
                 int offset = i * width + size;
-                Arrays.fill(array, offset, offset + area.left - 1, (byte) 0);
+                Arrays.fill(array, offset, offset + area.left - 1, initValue);
                 Arrays.fill(array, offset + area.right,
-                        offset + width, (byte) 0);
+                        offset + width, initValue);
             }
         }
         return buffer;

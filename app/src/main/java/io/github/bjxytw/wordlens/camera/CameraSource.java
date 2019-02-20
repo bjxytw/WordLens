@@ -102,10 +102,10 @@ public class CameraSource {
     }
 
     private Camera createCamera() throws IOException {
-        int requestedCameraId = getIdForRequestedCamera();
-        if (requestedCameraId == -1)
+        int cameraId = getCameraId();
+        if (cameraId == -1)
             throw new IOException("Could not find camera.");
-        Camera camera = Camera.open(requestedCameraId);
+        Camera camera = Camera.open(cameraId);
 
         Size previewSize = selectPreviewSize(camera);
         if (previewSize == null)
@@ -151,7 +151,7 @@ public class CameraSource {
 
         camera.setParameters(parameters);
 
-        camera.setPreviewCallbackWithBuffer(new CameraPreviewCallback());
+        camera.setPreviewCallbackWithBuffer(new CameraCallback());
         camera.addCallbackBuffer(createPreviewBuffer(size));
 
         return camera;
@@ -198,20 +198,6 @@ public class CameraSource {
         }
     }
 
-    private static int calculateFocusPoint(int point, int cameraSize) {
-        return point * 2000 / cameraSize - 1000;
-    }
-
-    private static int getIdForRequestedCamera() {
-        CameraInfo cameraInfo = new CameraInfo();
-        for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-            Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == CAMERA_FACING_BACK)
-                return i;
-        }
-        return -1;
-    }
-
     Size getSize() {
         return size;
     }
@@ -231,7 +217,7 @@ public class CameraSource {
         return byteArray;
     }
 
-    private class CameraPreviewCallback implements Camera.PreviewCallback {
+    private class CameraCallback implements Camera.PreviewCallback {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
             processRunnable.setNextFrame(data, camera);
@@ -239,41 +225,15 @@ public class CameraSource {
     }
 
     private class ProcessRunnable implements Runnable {
-
         private final Object lock = new Object();
         private boolean active = true;
-
         private ByteBuffer processingData;
 
         ProcessRunnable() {}
 
-        void setActive(boolean active) {
-            synchronized (lock) {
-                this.active = active;
-                lock.notifyAll();
-            }
-        }
-
-        void setNextFrame(byte[] data, Camera camera) {
-            synchronized (lock) {
-                if (processingData != null) {
-                    camera.addCallbackBuffer(processingData.array());
-                    processingData = null;
-                }
-
-                if (!byteArrayToByteBuffer.containsKey(data)) {
-                    Log.w(TAG, "Could not find ByteBuffer associated with the image data.");
-                    return;
-                }
-                processingData = byteArrayToByteBuffer.get(data);
-                lock.notifyAll();
-            }
-        }
-
         @Override
         public void run() {
             ByteBuffer data;
-
             while (true) {
                 synchronized (lock) {
                     while (active && (processingData == null)) {
@@ -301,21 +261,56 @@ public class CameraSource {
             }
         }
 
+        void setNextFrame(byte[] data, Camera camera) {
+            synchronized (lock) {
+                if (processingData != null) {
+                    camera.addCallbackBuffer(processingData.array());
+                    processingData = null;
+                }
+                if (!byteArrayToByteBuffer.containsKey(data)) {
+                    Log.w(TAG, "Could not find ByteBuffer.");
+                    return;
+                }
+                processingData = byteArrayToByteBuffer.get(data);
+                lock.notifyAll();
+            }
+        }
+
+        void setActive(boolean active) {
+            synchronized (lock) {
+                this.active = active;
+                lock.notifyAll();
+            }
+        }
+    }
+
+    private static int calculateFocusPoint(int point, int cameraSize) {
+        return point * 2000 / cameraSize - 1000;
+    }
+
+    private static int getCameraId() {
+        CameraInfo cameraInfo = new CameraInfo();
+        for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == CAMERA_FACING_BACK)
+                return i;
+        }
+        return -1;
     }
 
     private static Size selectPreviewSize(Camera camera) {
         Camera.Parameters parameters = camera.getParameters();
-        List<Camera.Size> supportedSizeList = parameters.getSupportedPreviewSizes();
-        List<Size> validSizeList = new ArrayList<>();
+        List<Camera.Size> cameraSizeList = parameters.getSupportedPreviewSizes();
+        List<Size> sizeList = new ArrayList<>();
         Size selectedPreviewSize = null;
 
-        for (android.hardware.Camera.Size previewSize : supportedSizeList)
-            validSizeList.add(new Size(previewSize.width, previewSize.height));
+        for (android.hardware.Camera.Size previewSize : cameraSizeList)
+            sizeList.add(new Size(previewSize.width, previewSize.height));
 
         int minDiff = Integer.MAX_VALUE;
-        for (Size previewSize : validSizeList) {
+        for (Size previewSize : sizeList) {
             int diff = Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
-                            + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
+                    + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
             if (diff < minDiff) {
                 selectedPreviewSize = previewSize;
                 minDiff = diff;
@@ -330,9 +325,8 @@ public class CameraSource {
         int minDiff = Integer.MAX_VALUE;
         List<int[]> fpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
         for (int[] range : fpsRangeList) {
-            int min = fpsScale - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
-            int max = fpsScale - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
-            int diff = Math.abs(min) + Math.abs(max);
+            int diff = Math.abs(fpsScale - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX])
+                    + Math.abs(fpsScale - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
             if (diff < minDiff) {
                 selectedFpsRange = range;
                 minDiff = diff;
@@ -340,5 +334,4 @@ public class CameraSource {
         }
         return selectedFpsRange;
     }
-
 }
