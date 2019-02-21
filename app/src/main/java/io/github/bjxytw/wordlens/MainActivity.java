@@ -121,33 +121,6 @@ public final class MainActivity extends AppCompatActivity
         }
     }
 
-    private static void showTutorialWindow(final Context context, final View view) {
-        view.post(new Runnable() {
-            @Override
-            public void run() {
-                final PopupWindow tutorialPopup = new PopupWindow(context);
-                TextView tutorialText = new TextView(context);
-                tutorialText.setText(context.getString(R.string.tutorial_message));
-                tutorialText.setTextColor(Color.WHITE);
-                tutorialText.setTextSize(17.0f);
-                tutorialText.setShadowLayer(2.0f, 0.0f, 0.0f,
-                        ContextCompat.getColor(context, R.color.colorPopupShadow));
-                tutorialPopup.setContentView(tutorialText);
-                tutorialPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                tutorialPopup.setOutsideTouchable(true);
-                tutorialPopup.setAnimationStyle(R.style.PopupAnimation);
-                tutorialPopup.showAtLocation(view, Gravity.TOP, 0, 120);
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        tutorialPopup.dismiss();
-                    }
-                }, 6000L);
-            }
-        });
-    }
-
     private void startCameraSource() {
         if (camera == null) return;
         try {
@@ -159,30 +132,12 @@ public final class MainActivity extends AppCompatActivity
         }
     }
 
-    private void loadPreference() {
+    private void loadPreferences() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         searchEngine = preferences.getString(SettingsFragment.KEY_SEARCH_ENGINE, "google");
         useCustomTabs = preferences.getBoolean(SettingsFragment.KEY_CUSTOM_TABS, true);
         cursorVisible = preferences.getBoolean(SettingsFragment.KEY_CURSOR_VISIBLE, false);
         linkToPause = preferences.getBoolean(SettingsFragment.KEY_LINK_PAUSE, false);
-    }
-
-    @Override
-    public void onRecognitionResult(String resultText) {
-        if (paused) return;
-        String text = DictionarySearch.removeBothEndSymbol(resultText);
-        if (text != null && dictionary != null && !text.equals(recognizedText)) {
-            recognizedText = text;
-            resultTextView.setText(text);
-            DictionaryData data = dictionary.search(text);
-            if (data != null && (linkHistory.size() == 0 ||
-                    !data.wordText().equals(linkHistory.getFirst().wordText()))) {
-                setDictionaryText(data);
-                dictionaryBackButton.setVisibility(View.GONE);
-                linkHistory.clear();
-                linkHistory.add(data);
-            }
-        }
     }
 
     private void setDictionaryText(DictionaryData data) {
@@ -222,6 +177,24 @@ public final class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onRecognitionResult(String resultText) {
+        if (paused) return;
+        String text = DictionarySearch.removeBothEndSymbol(resultText);
+        if (text != null && dictionary != null && !text.equals(recognizedText)) {
+            recognizedText = text;
+            resultTextView.setText(text);
+            DictionaryData data = dictionary.search(text);
+            if (data != null && (linkHistory.size() == 0 ||
+                    !data.wordText().equals(linkHistory.getFirst().wordText()))) {
+                setDictionaryText(data);
+                dictionaryBackButton.setVisibility(View.GONE);
+                linkHistory.clear();
+                linkHistory.add(data);
+            }
+        }
+    }
+
+    @Override
     public void onRequestPermissionsResult(
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -242,7 +215,7 @@ public final class MainActivity extends AppCompatActivity
         super.onResume();
         setPause(false);
         setFlash(flashed);
-        loadPreference();
+        loadPreferences();
         cameraCursor.setAreaVisible(cursorVisible);
         BrowserOpened = false;
         startCameraSource();
@@ -261,6 +234,10 @@ public final class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
+    private void stop() {
+        preview.stop();
+    }
+
     private void setPause(boolean pause) {
         if (pause) pauseButton.setImageResource(R.drawable.ic_play_arrow);
         else pauseButton.setImageResource(R.drawable.ic_pause);
@@ -271,10 +248,6 @@ public final class MainActivity extends AppCompatActivity
         if (on) flashButton.setImageResource(R.drawable.ic_highlight_on);
         else flashButton.setImageResource(R.drawable.ic_highlight_off);
         flashed = on;
-    }
-
-    private void stop() {
-        preview.stop();
     }
 
     private void searchOnBrowser() {
@@ -391,5 +364,32 @@ public final class MainActivity extends AppCompatActivity
                         copyToClipboard();
             }
         }
+    }
+
+    private static void showTutorialWindow(final Context context, final View view) {
+        view.post(new Runnable() {
+            @Override
+            public void run() {
+                final PopupWindow tutorialPopup = new PopupWindow(context);
+                TextView tutorialText = new TextView(context);
+                tutorialText.setText(context.getString(R.string.tutorial_message));
+                tutorialText.setTextColor(Color.WHITE);
+                tutorialText.setTextSize(17.0f);
+                tutorialText.setShadowLayer(2.0f, 0.0f, 0.0f,
+                        ContextCompat.getColor(context, R.color.colorPopupShadow));
+                tutorialPopup.setContentView(tutorialText);
+                tutorialPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                tutorialPopup.setOutsideTouchable(true);
+                tutorialPopup.setAnimationStyle(R.style.PopupAnimation);
+                tutorialPopup.showAtLocation(view, Gravity.TOP, 0, 120);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        tutorialPopup.dismiss();
+                    }
+                }, 6000L);
+            }
+        });
     }
 }

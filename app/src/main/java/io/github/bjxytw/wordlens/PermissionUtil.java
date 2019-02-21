@@ -17,7 +17,7 @@ class PermissionUtil {
 
     static void getPermissions(Activity activity) {
         List<String> permissions = new ArrayList<>();
-        for (String permission : getRequiredPermissionList(activity)) {
+        for (String permission : getPermissionList(activity)) {
             if (isPermissionDenied(activity, permission))
                 permissions.add(permission);
         }
@@ -27,7 +27,7 @@ class PermissionUtil {
     }
 
     static boolean isAllPermissionsGranted(Activity activity) {
-        for (String permission : getRequiredPermissionList(activity))
+        for (String permission : getPermissionList(activity))
             if (isPermissionDenied(activity, permission))
                 return false;
         return true;
@@ -38,7 +38,7 @@ class PermissionUtil {
                 == PackageManager.PERMISSION_DENIED;
     }
 
-    private static String[] getRequiredPermissionList(Activity activity) {
+    private static String[] getPermissionList(Activity activity) {
         try {
             PackageInfo info = activity.getPackageManager()
                     .getPackageInfo(activity.getPackageName(), PackageManager.GET_PERMISSIONS);

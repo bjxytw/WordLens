@@ -22,12 +22,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TextRecognition {
-
     private static final String TAG = "TextRecognition";
-
     private final FirebaseVisionTextRecognizer detector;
     private final CameraCursorGraphic cursor;
-
     private TextRecognitionListener listener;
     private ImageData processingData;
 
