@@ -106,13 +106,14 @@ public final class MainActivity extends AppCompatActivity
         textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
 
+        dictionary = new DictionarySearch(this);
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
-            createSources();
+            processAfterGranted();
         else PermissionUtil.getPermissions(this);
     }
 
-    private void createSources() {
-        if (dictionary == null) dictionary = new DictionarySearch(this);
+    private void processAfterGranted() {
         if (camera == null) camera = new CameraSource(textRecognition);
 
         if (!AppLaunchChecker.hasStartedFromLauncher(getApplicationContext())) {
@@ -201,7 +202,7 @@ public final class MainActivity extends AppCompatActivity
 
         if (PermissionUtil.isAllPermissionsGranted(this)) {
             Log.i(TAG, "Permission granted.");
-            createSources();
+            processAfterGranted();
         } else {
             Log.i(TAG, "Permission denied.");
             Toast.makeText(this,

@@ -35,6 +35,7 @@ public class DictionarySearch {
     }
 
     public DictionaryData searchDirect(String searchWord) {
+        if (database == null) return null;
         String wordText = null;
         StringBuilder meanText = new StringBuilder();
         Cursor dbCursor = database.rawQuery(SQL_SEARCH, new String[]{searchWord});
