@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.AppLaunchChecker;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +51,7 @@ import io.github.bjxytw.wordlens.settings.SettingsActivity;
 import io.github.bjxytw.wordlens.settings.SettingsFragment;
 
 public final class MainActivity extends AppCompatActivity
-        implements TextRecognition.TextRecognitionListener {
+        implements TextRecognition.TextRecognitionListener, TextToSpeech.OnInitListener {
     private static final String TAG = "MainActivity";
     private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
     private CameraSource camera;
@@ -57,9 +59,11 @@ public final class MainActivity extends AppCompatActivity
     private CameraCursorGraphic cameraCursor;
     private TextRecognition textRecognition;
     private DictionarySearch dictionary;
+    private TextToSpeech textToSpeech;
     private ImageButton pauseButton;
     private ImageButton flashButton;
     private ImageButton dictionaryBackButton;
+    private ImageButton ttsButton;
     private ImageButton copyButton;
     private TextView resultTextView;
     private TextView headTextView;
@@ -86,6 +90,7 @@ public final class MainActivity extends AppCompatActivity
         pauseButton = findViewById(R.id.pauseButton);
         flashButton = findViewById(R.id.flashButton);
         dictionaryBackButton = findViewById(R.id.dictionaryBack);
+        ttsButton = findViewById(R.id.textToSpeech);
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
@@ -99,6 +104,8 @@ public final class MainActivity extends AppCompatActivity
         flashButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setVisibility(View.GONE);
+        ttsButton.setOnClickListener(buttonListener);
+        ttsButton.setVisibility(View.GONE);
         settingsButton.setOnClickListener(buttonListener);
         searchButton.setOnClickListener(buttonListener);
         copyButton.setOnClickListener(buttonListener);
@@ -108,6 +115,8 @@ public final class MainActivity extends AppCompatActivity
 
         dictionary = new DictionarySearch(this);
 
+        textToSpeech = new TextToSpeech(this, this)
+;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
             processAfterGranted();
         else PermissionUtil.getPermissions(this);
@@ -189,6 +198,7 @@ public final class MainActivity extends AppCompatActivity
                     !data.wordText().equals(linkHistory.getFirst().wordText()))) {
                 setDictionaryText(data);
                 dictionaryBackButton.setVisibility(View.GONE);
+                ttsButton.setVisibility(View.VISIBLE);
                 linkHistory.clear();
                 linkHistory.add(data);
             }
@@ -232,6 +242,10 @@ public final class MainActivity extends AppCompatActivity
     public void onDestroy() {
         if (camera != null) camera.release();
         if (dictionary != null) dictionary.close();
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
         super.onDestroy();
     }
 
@@ -321,6 +335,22 @@ public final class MainActivity extends AppCompatActivity
 
     }
 
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            if (textToSpeech != null) {
+                int result = textToSpeech.setLanguage(Locale.US);
+                if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Toast.makeText(this, R.string.tts_not_supported,
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        } else {
+            Log.e(TAG, "TTS initialization failed");
+        }
+    }
+
     private class ButtonClick implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -354,6 +384,12 @@ public final class MainActivity extends AppCompatActivity
                         if (linkHistory.size() == 2)
                             dictionaryBackButton.setVisibility(View.GONE);
                         linkHistory.removeLast();
+                    }
+                    break;
+                case R.id.textToSpeech:
+                    if (linkHistory.size() > 0 && textToSpeech != null) {
+                        textToSpeech.speak(linkHistory.getLast().wordText(),
+                                TextToSpeech.QUEUE_FLUSH, null, "WordText");
                     }
                     break;
                 case R.id.searchButton:

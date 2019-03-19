@@ -17,13 +17,16 @@ public class SettingsFragment extends PreferenceFragment {
     public static final String KEY_CURSOR_VISIBLE = "link_cursor_visible_switch";
     public static final String KEY_LINK_PAUSE = "link_pause_switch";
     public static final String KEY_LICENSE_MENU = "license";
+    public static final String KEY_TTS_SETTINGS = "tts";
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         bindPreferenceSummary(findPreference(KEY_SEARCH_ENGINE));
         Preference licensePref = findPreference(KEY_LICENSE_MENU);
+        Preference ttsPref = findPreference(KEY_TTS_SETTINGS);
         licensePref.setOnPreferenceClickListener(new PreferenceClickListener());
+        ttsPref.setOnPreferenceClickListener(new PreferenceClickListener());
     }
 
     private class PreferenceClickListener implements Preference.OnPreferenceClickListener {
@@ -32,6 +35,12 @@ public class SettingsFragment extends PreferenceFragment {
             switch (preference.getKey()) {
                 case KEY_LICENSE_MENU:
                     startActivity(new Intent(getActivity(), OssLicensesMenuActivity.class));
+                    break;
+                case KEY_TTS_SETTINGS:
+                    Intent intent = new Intent();
+                    intent.setAction("com.android.settings.TTS_SETTINGS");
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
             }
             return true;
         }

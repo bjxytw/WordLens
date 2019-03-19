@@ -28,6 +28,9 @@
 
     <PreferenceCategory android:title="@string/pref_category_others">
         <Preference
+            android:key="tts"
+            android:title="@string/pref_tts" />
+        <Preference
             android:key="license"
             android:title="@string/pref_license" />
         <Preference android:title="@string/pref_privacy_policy">

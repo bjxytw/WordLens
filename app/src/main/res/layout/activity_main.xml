@@ -123,13 +123,23 @@
                         android:background="@color/transparent"
                         android:contentDescription="@null"
                         app:srcCompat="@drawable/ic_arrow_back" />
+                    <ImageButton
+                        android:id="@+id/textToSpeech"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginStart="2dp"
+                        android:background="@color/transparent"
+                        android:contentDescription="@null"
+                        app:srcCompat="@drawable/ic_tts_24dp" />
                     <TextView
                         android:id="@+id/headText"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:textColor="@color/colorPrimaryText"
                         android:textSize="28sp" />
+
                 </LinearLayout>
 
                 <TextView

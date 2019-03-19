@@ -32,6 +32,7 @@
     <string name="pref_link_pause_switch">リンク押下で一時停止</string>
     <string name="pref_link_pause_switch_summary">辞書内のリンクを押した際に一時停止</string>
 
+    <string name="pref_tts">テキスト読み上げ（TTS）の設定</string>
     <string name="pref_license">ライセンス</string>
     <string name="pref_privacy_policy">プライバシーポリシー</string>
 
