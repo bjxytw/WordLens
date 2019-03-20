@@ -26,7 +26,7 @@
         android:layout_alignEnd="@id/pauseButton"
         android:layout_marginTop="5dp"
         android:background="@drawable/settings_button_background"
-        android:contentDescription="@null"
+        android:contentDescription="@string/settingsButton"
         app:srcCompat="@drawable/ic_settings" />
 
     <ImageButton
@@ -37,7 +37,7 @@
         android:layout_alignBottom="@+id/pauseButton"
         android:layout_marginStart="5dp"
         android:background="@drawable/button_background"
-        android:contentDescription="@null"/>
+        android:contentDescription="@string/flashButton"/>
 
     <ImageButton
         android:id="@+id/pauseButton"
@@ -48,7 +48,7 @@
         android:layout_alignParentEnd="true"
         android:layout_marginBottom="5dp"
         android:background="@drawable/button_background"
-        android:contentDescription="@null"/>
+        android:contentDescription="@string/pauseButton"/>
 
     <RelativeLayout
         android:id="@+id/toolOverlay"
@@ -69,22 +69,21 @@
 
         <ImageButton
             android:id="@+id/copyButton"
-            android:layout_width="wrap_content"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="4dp"
             android:background="@color/transparent"
-            android:contentDescription="@null"
+            android:contentDescription="@string/copyButton"
             app:srcCompat="@drawable/ic_content_copy" />
 
         <ImageButton
             android:id="@+id/searchButton"
-            android:layout_width="wrap_content"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:layout_toStartOf="@id/copyButton"
-            android:layout_marginEnd="5dp"
             android:background="@color/transparent"
-            android:contentDescription="@null"
+            android:contentDescription="@string/searchButton"
             app:srcCompat="@drawable/ic_search" />
 
     </RelativeLayout>
@@ -121,7 +120,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:background="@color/transparent"
-                        android:contentDescription="@null"
+                        android:contentDescription="@string/dictionaryBack"
                         app:srcCompat="@drawable/ic_arrow_back" />
                     <ImageButton
                         android:id="@+id/textToSpeech"
@@ -130,7 +129,7 @@
                         android:layout_marginTop="4dp"
                         android:layout_marginStart="2dp"
                         android:background="@color/transparent"
-                        android:contentDescription="@null"
+                        android:contentDescription="@string/textToSpeech"
                         app:srcCompat="@drawable/ic_tts_24dp" />
                     <TextView
                         android:id="@+id/headText"

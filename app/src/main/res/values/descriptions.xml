@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settingsButton">設定画面を開く</string>
+    <string name="flashButton">フラッシュの切り替え</string>
+    <string name="pauseButton">一時停止/再開</string>
+    <string name="copyButton">クリップボードにコピー</string>
+    <string name="searchButton">webサイトで検索</string>
+    <string name="dictionaryBack">前の単語に戻る</string>
+    <string name="textToSpeech">単語の読み上げ</string>
+</resources>

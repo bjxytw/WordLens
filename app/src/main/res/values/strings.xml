@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">英単語レンズ</string>
     <string name="recognizing_text" tools:ignore="TypographyEllipsis">認識中...</string>
@@ -7,5 +8,5 @@
     <string name="copied_message">コピーしました</string>
     <string name="browser_cannot_open">ブラウザを開けません。</string>
     <string name="custom_tabs_cannot_open">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
-    <string name="tts_not_supported">TTSがサポートされていません。</string>
+    <string name="tts_not_supported">テキスト読み上げはサポートされていません。</string>
 </resources>

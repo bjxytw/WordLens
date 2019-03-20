@@ -132,7 +132,8 @@ public class CameraSource {
         parameters.setRotation(ROTATION_DEGREE);
         camera.setDisplayOrientation(ROTATION_DEGREE);
 
-        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_MACRO)
+        List<String> focusModes = parameters.getSupportedFocusModes();
+        if (focusModes != null && focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)
                 && parameters.getMaxNumFocusAreas() > 0) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
             supportedAutoFocus = true;
@@ -141,7 +142,8 @@ public class CameraSource {
             Log.i(TAG, "Camera auto focus is not supported on this device.");
         }
 
-        if (parameters.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+        List<String> flashModes = parameters.getSupportedFlashModes();
+        if (flashModes != null && flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
             supportedFlash = true;
             if (flashed) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
         } else {
@@ -158,33 +160,31 @@ public class CameraSource {
     }
 
     synchronized void cameraFocus() {
-        if (camera != null) {
-            Camera.Parameters parameters = camera.getParameters();
-            if (focusArea != null && parameters != null) {
-                parameters.setFocusAreas(focusArea);
-                camera.setParameters(parameters);
-                camera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean success, Camera camera) {
-                        Log.i(TAG, "AutoFocus: " + success);
-                    }
-                });
-            }
-        }
+        if (camera == null || !supportedAutoFocus || focusArea == null) return;
+
+        Camera.Parameters parameters = camera.getParameters();
+        if (parameters == null) return;
+
+        parameters.setFocusAreas(focusArea);
+        camera.setParameters(parameters);
+        camera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                Log.i(TAG, "AutoFocus: " + success); }
+        });
     }
 
     public synchronized boolean cameraFlash(boolean on){
-        if (camera != null) {
-            Camera.Parameters parameters = camera.getParameters();
-            if (supportedFlash && parameters != null) {
-                if (on) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                else parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                camera.setParameters(parameters);
-                flashed = on;
-                return true;
-            }
-        }
-        return false;
+        if (camera == null || !supportedFlash) return false;
+
+        Camera.Parameters parameters = camera.getParameters();
+        if (parameters == null) return false;
+
+        if (on) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        else parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+        camera.setParameters(parameters);
+        flashed = on;
+        return true;
     }
 
     void setCameraFocusArea(Rect rect) {
