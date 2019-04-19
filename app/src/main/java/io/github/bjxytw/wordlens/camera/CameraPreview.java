@@ -56,7 +56,7 @@ public class CameraPreview extends SurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        if (camera != null && event.getY() < cursor.getHeight())
+        if (camera != null && surfaceAvailable && event.getY() < cursor.getHeight())
             camera.cameraFocus();
         return true;
     }
@@ -77,7 +77,7 @@ public class CameraPreview extends SurfaceView {
                     setMeasuredDimension(width, height);
                 }
 
-                if (cursor != null) {
+                if (cursor != null && surfaceAvailable) {
                     cursor.setScale(cameraWidth, cameraHeight, width, height);
                     cursor.postInvalidate();
                     camera.setCameraFocusArea(cursor.getCameraCursorRect());
