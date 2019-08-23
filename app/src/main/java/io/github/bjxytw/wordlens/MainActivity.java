@@ -14,11 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
-import android.support.customtabs.CustomTabsIntent;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.AppLaunchChecker;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
@@ -41,6 +36,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.app.AppLaunchChecker;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.data.DictionaryData;
@@ -89,8 +91,8 @@ public final class MainActivity extends AppCompatActivity
         cameraCursor = findViewById(R.id.graphicOverlay);
         pauseButton = findViewById(R.id.pauseButton);
         flashButton = findViewById(R.id.flashButton);
-        dictionaryBackButton = findViewById(R.id.dictionaryBack);
-        ttsButton = findViewById(R.id.textToSpeech);
+        dictionaryBackButton = findViewById(R.id.dictionaryBackButton);
+        ttsButton = findViewById(R.id.textToSpeechButton);
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
@@ -378,7 +380,7 @@ public final class MainActivity extends AppCompatActivity
                         }
                     }
                     break;
-                case R.id.dictionaryBack:
+                case R.id.dictionaryBackButton:
                     if (linkHistory.size() >= 2) {
                         setDictionaryText(linkHistory.get(linkHistory.size() - 2));
                         if (linkHistory.size() == 2)
@@ -386,7 +388,7 @@ public final class MainActivity extends AppCompatActivity
                         linkHistory.removeLast();
                     }
                     break;
-                case R.id.textToSpeech:
+                case R.id.textToSpeechButton:
                     if (linkHistory.size() > 0 && textToSpeech != null) {
                         textToSpeech.speak(linkHistory.getLast().wordText(),
                                 TextToSpeech.QUEUE_FLUSH, null, "WordText");

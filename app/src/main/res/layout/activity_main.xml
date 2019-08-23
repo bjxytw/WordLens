@@ -115,7 +115,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal">
                     <ImageButton
-                        android:id="@+id/dictionaryBack"
+                        android:id="@+id/dictionaryBackButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
@@ -123,7 +123,7 @@
                         android:contentDescription="@string/dictionaryBack"
                         app:srcCompat="@drawable/ic_arrow_back" />
                     <ImageButton
-                        android:id="@+id/textToSpeech"
+                        android:id="@+id/textToSpeechButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
