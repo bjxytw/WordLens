@@ -70,7 +70,7 @@ public final class MainActivity extends AppCompatActivity
     private TextView resultTextView;
     private TextView headTextView;
     private TextView meanTextView;
-    private ScrollView dictionaryScroll;
+    private ScrollView meanView;
     private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
     private String recognizedText;
     private String searchEngine;
@@ -96,7 +96,7 @@ public final class MainActivity extends AppCompatActivity
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
-        dictionaryScroll = findViewById(R.id.dictionaryScrollView);
+        meanView = findViewById(R.id.meanView);
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton searchButton = findViewById(R.id.searchButton);
         copyButton = findViewById(R.id.copyButton);
@@ -117,8 +117,8 @@ public final class MainActivity extends AppCompatActivity
 
         dictionary = new DictionarySearch(this);
 
-        textToSpeech = new TextToSpeech(this, this)
-;
+        textToSpeech = new TextToSpeech(this, this);
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
             processAfterGranted();
         else PermissionUtil.getPermissions(this);
@@ -185,7 +185,7 @@ public final class MainActivity extends AppCompatActivity
         headTextView.setText(data.wordText());
         meanTextView.setText(spanMeanText);
         meanTextView.setMovementMethod(LinkMovementMethod.getInstance());
-        dictionaryScroll.scrollTo(0, 0);
+        meanView.scrollTo(0, 0);
     }
 
     @Override
@@ -256,7 +256,7 @@ public final class MainActivity extends AppCompatActivity
     }
 
     private void setPause(boolean pause) {
-        if (pause) pauseButton.setImageResource(R.drawable.ic_play_arrow);
+        if (pause) pauseButton.setImageResource(R.drawable.ic_play);
         else pauseButton.setImageResource(R.drawable.ic_pause);
         paused = pause;
     }

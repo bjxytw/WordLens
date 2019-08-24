@@ -17,45 +17,26 @@
         android:id="@+id/graphicOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/meanPreview"/>
+        android:layout_above="@id/cameraToolLayout"/>
 
     <ImageButton
         android:id="@+id/settingsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignEnd="@id/pauseButton"
-        android:layout_marginTop="5dp"
-        android:background="@drawable/settings_button_background"
-        android:contentDescription="@string/settingsButton"
-        app:srcCompat="@drawable/ic_settings" />
-
-    <ImageButton
-        android:id="@+id/flashButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/pauseButton"
-        android:layout_alignBottom="@+id/pauseButton"
-        android:layout_marginStart="5dp"
-        android:background="@drawable/button_background"
-        android:contentDescription="@string/flashButton"/>
-
-    <ImageButton
-        android:id="@+id/pauseButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/toolOverlay"
-        android:layout_marginEnd="5dp"
         android:layout_alignParentEnd="true"
-        android:layout_marginBottom="5dp"
-        android:background="@drawable/button_background"
-        android:contentDescription="@string/pauseButton"/>
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/menu_button_background"
+        android:contentDescription="@string/settingsButton"
+        app:srcCompat="@drawable/ic_menu_24dp" />
 
     <RelativeLayout
-        android:id="@+id/toolOverlay"
+        android:id="@+id/wordToolOverlay"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_alignBottom="@+id/graphicOverlay"
-        android:background="@color/colorOverlay">
+        android:layout_above="@id/cameraToolLayout"
+        android:background="@color/colorWordToolBackground">
+
         <TextView
             android:id="@+id/resultText"
             android:layout_width="match_parent"
@@ -86,73 +67,99 @@
             android:contentDescription="@string/searchButton"
             app:srcCompat="@drawable/ic_search" />
 
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/meanPreview"
-        android:layout_width="match_parent"
-        android:layout_height="252dp"
-        android:background="@color/colorPrimaryLight"
-        android:layout_alignParentBottom="true">
         <View
             android:id="@+id/border_line"
             android:layout_width="match_parent"
             android:layout_height="2dp"
+            android:layout_alignParentBottom="true"
             android:background="@color/colorAccent"/>
+    </RelativeLayout>
 
-        <ScrollView
-            android:id="@+id/dictionaryScrollView"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/cameraToolLayout"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_above="@+id/meanView">
+
+        <ImageButton
+            android:id="@+id/flashButton"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_below="@id/border_line">
+            android:layout_weight="2"
+            android:background="@drawable/button_background"
+            android:contentDescription="@string/flashButton" />
 
+        <ImageButton
+            android:id="@+id/pauseButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:background="@drawable/button_background"
+            android:contentDescription="@string/pauseButton"/>
+
+        <ImageButton
+            android:id="@+id/zoomInButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="@drawable/button_background"
+            android:contentDescription="@string/zoomButton"
+            android:src="@drawable/ic_zoom_24dp"/>
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/meanView"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/colorBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
-                    <ImageButton
-                        android:id="@+id/dictionaryBackButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:background="@color/transparent"
-                        android:contentDescription="@string/dictionaryBack"
-                        app:srcCompat="@drawable/ic_arrow_back" />
-                    <ImageButton
-                        android:id="@+id/textToSpeechButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginStart="2dp"
-                        android:background="@color/transparent"
-                        android:contentDescription="@string/textToSpeech"
-                        app:srcCompat="@drawable/ic_tts_24dp" />
-                    <TextView
-                        android:id="@+id/headText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:textColor="@color/colorPrimaryText"
-                        android:textSize="28sp" />
-
-                </LinearLayout>
-
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+                <ImageButton
+                    android:id="@+id/dictionaryBackButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/transparent"
+                    android:contentDescription="@string/dictionaryBack"
+                    app:srcCompat="@drawable/ic_arrow_back" />
+                <ImageButton
+                    android:id="@+id/textToSpeechButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginStart="2dp"
+                    android:background="@color/transparent"
+                    android:contentDescription="@string/textToSpeech"
+                    app:srcCompat="@drawable/ic_tts_24dp" />
                 <TextView
-                    android:id="@+id/meanText"
-                    android:layout_width="match_parent"
+                    android:id="@+id/headText"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
-                    android:textColor="@color/colorSecondaryText"
-                    android:textSize="16sp" />
+                    android:textColor="@color/colorPrimaryText"
+                    android:textSize="28sp" />
+
             </LinearLayout>
 
-        </ScrollView>
+            <TextView
+                android:id="@+id/meanText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textColor="@color/colorSecondaryText"
+                android:textSize="16sp" />
+        </LinearLayout>
 
-    </RelativeLayout>
+    </ScrollView>
 
 </RelativeLayout>
