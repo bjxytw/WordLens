@@ -45,10 +45,14 @@ public class CameraSource {
     private Camera camera;
     private Size size;
     private List<Camera.Area> focusArea;
+    private Integer requestedZoomRatio;
+    private int zoomStep;
 
-    private boolean supportedAutoFocus;
-    private boolean supportedFlash;
+    private boolean supportedAutoFocus = false;
+    private boolean supportedFlash = false;
+    private boolean supportedZoom = false;
     private boolean flashed;
+    private boolean zoomed;
 
     public CameraSource(TextRecognition textRecognition) {
         processRunnable = new ProcessRunnable();
@@ -106,24 +110,17 @@ public class CameraSource {
         if (cameraId == -1)
             throw new IOException("Could not find camera.");
         Camera camera = Camera.open(cameraId);
+        Camera.Parameters parameters = camera.getParameters();
 
-        Size previewSize = selectPreviewSize(camera);
-        if (previewSize == null)
-            throw new IOException("Could not find preview size.");
+        Size previewSize = selectPreviewSize(parameters);
+        if (previewSize == null) throw new IOException("Could not find preview size.");
         size = previewSize;
 
-        Log.i(TAG, "Selected preview size: " + this.size.toString());
-
-        int[] previewFpsRange = selectFpsRange(camera);
-        if (previewFpsRange == null)
-            throw new IOException("Could not find FPS range.");
+        int[] previewFpsRange = selectFpsRange(parameters);
+        if (previewFpsRange == null) throw new IOException("Could not find FPS range.");
 
         int minFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
         int maxFps = previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
-        Log.i(TAG, "FPS Range: " + (float) minFps / 1000.0f
-                + " ~ " + (float) maxFps / 1000.0f);
-
-        Camera.Parameters parameters = camera.getParameters();
 
         parameters.setPreviewSize(size.getWidth(), size.getHeight());
         parameters.setPreviewFpsRange(minFps, maxFps);
@@ -138,7 +135,6 @@ public class CameraSource {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
             supportedAutoFocus = true;
         } else {
-            supportedAutoFocus = false;
             Log.i(TAG, "Camera auto focus is not supported on this device.");
         }
 
@@ -147,8 +143,18 @@ public class CameraSource {
             supportedFlash = true;
             if (flashed) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
         } else {
-            supportedFlash = false;
             Log.i(TAG, "Camera flash is not supported on this device.");
+        }
+
+        if (parameters.isZoomSupported()) {
+            Integer step = selectZoomStep(parameters);
+            if (step != null){
+                zoomStep = step;
+                supportedZoom = true;
+                if (zoomed) parameters.setZoom(zoomStep);
+            }
+        } else {
+            Log.i(TAG, "Camera zoom is not supported on this device.");
         }
 
         camera.setParameters(parameters);
@@ -175,16 +181,29 @@ public class CameraSource {
         });
     }
 
-    public synchronized boolean cameraFlash(boolean on){
+    public synchronized boolean cameraFlash(boolean flash){
         if (camera == null || !supportedFlash) return false;
 
         Camera.Parameters parameters = camera.getParameters();
         if (parameters == null) return false;
 
-        if (on) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        if (flash) parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
         else parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
         camera.setParameters(parameters);
-        flashed = on;
+        flashed = flash;
+        return true;
+    }
+
+    public synchronized boolean cameraZoom(boolean zoom) {
+        if (camera == null || !supportedZoom) return false;
+
+        Camera.Parameters parameters = camera.getParameters();
+        if (parameters == null) return false;
+
+        if (zoom) parameters.setZoom(zoomStep);
+        else parameters.setZoom(0);
+        camera.setParameters(parameters);
+        zoomed = zoom;
         return true;
     }
 
@@ -197,6 +216,10 @@ public class CameraSource {
                             calculateFocusPoint(rect.right, size.getWidth()),
                             calculateFocusPoint(rect.bottom, size.getHeight())), 1));
         }
+    }
+
+    public void setZoomRatio(int ratio) {
+        requestedZoomRatio = ratio;
     }
 
     Size getSize() {
@@ -285,6 +308,24 @@ public class CameraSource {
         }
     }
 
+    private Integer selectZoomStep(Camera.Parameters parameters) {
+        if (requestedZoomRatio == null) return null;
+        List<Integer> zoomRatios = parameters.getZoomRatios();
+        Integer selectedZoomStep = null;
+        int minDiff = Integer.MAX_VALUE;
+
+        int step = 0;
+        for (int ratio : zoomRatios) {
+            int diff = Math.abs(requestedZoomRatio - ratio);
+            if (diff < minDiff) {
+                selectedZoomStep = step;
+                minDiff = diff;
+            }
+            step++;
+        }
+        return selectedZoomStep;
+    }
+
     private static int calculateFocusPoint(int point, int cameraSize) {
         return point * 2000 / cameraSize - 1000;
     }
@@ -299,16 +340,15 @@ public class CameraSource {
         return -1;
     }
 
-    private static Size selectPreviewSize(Camera camera) {
-        Camera.Parameters parameters = camera.getParameters();
+    private static Size selectPreviewSize(Camera.Parameters parameters) {
         List<Camera.Size> cameraSizeList = parameters.getSupportedPreviewSizes();
         List<Size> sizeList = new ArrayList<>();
         Size selectedPreviewSize = null;
+        int minDiff = Integer.MAX_VALUE;
 
         for (android.hardware.Camera.Size previewSize : cameraSizeList)
             sizeList.add(new Size(previewSize.width, previewSize.height));
 
-        int minDiff = Integer.MAX_VALUE;
         for (Size previewSize : sizeList) {
             int diff = Math.abs(previewSize.getWidth() - REQUESTED_PREVIEW_WIDTH)
                     + Math.abs(previewSize.getHeight() - REQUESTED_PREVIEW_HEIGHT);
@@ -320,11 +360,12 @@ public class CameraSource {
         return selectedPreviewSize;
     }
 
-    private static int[] selectFpsRange(Camera camera) {
+    private static int[] selectFpsRange(Camera.Parameters parameters) {
         int fpsScale = (int) (REQUESTED_FPS * 1000.0f);
+        List<int[]> fpsRangeList = parameters.getSupportedPreviewFpsRange();
         int[] selectedFpsRange = null;
         int minDiff = Integer.MAX_VALUE;
-        List<int[]> fpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
+
         for (int[] range : fpsRangeList) {
             int diff = Math.abs(fpsScale - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX])
                     + Math.abs(fpsScale - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
@@ -335,4 +376,5 @@ public class CameraSource {
         }
         return selectedFpsRange;
     }
+
 }

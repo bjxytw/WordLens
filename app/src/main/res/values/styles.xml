@@ -3,9 +3,14 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:colorControlNormal">@color/colorButtonIconWhite</item>
     </style>
     <style name="PopupAnimation">
         <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
         <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+    <style name="SettingsActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="android:homeAsUpIndicator">@drawable/ic_close_24dp</item>
     </style>
 </resources>

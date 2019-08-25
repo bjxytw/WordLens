@@ -14,6 +14,7 @@ import io.github.bjxytw.wordlens.R;
 public class SettingsFragment extends PreferenceFragment {
     public static final String KEY_SEARCH_ENGINE = "search_engine_list";
     public static final String KEY_CUSTOM_TABS = "custom_tabs_switch";
+    public static final String KEY_ZOOM_RATIO = "zoom_ratio_list";
     public static final String KEY_CURSOR_VISIBLE = "link_cursor_visible_switch";
     public static final String KEY_LINK_PAUSE = "link_pause_switch";
     public static final String KEY_LICENSE_MENU = "license";
@@ -23,6 +24,7 @@ public class SettingsFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         bindPreferenceSummary(findPreference(KEY_SEARCH_ENGINE));
+        bindPreferenceSummary(findPreference(KEY_ZOOM_RATIO));
         Preference licensePref = findPreference(KEY_LICENSE_MENU);
         Preference ttsPref = findPreference(KEY_TTS_SETTINGS);
         licensePref.setOnPreferenceClickListener(new PreferenceClickListener());

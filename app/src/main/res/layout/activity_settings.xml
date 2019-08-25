@@ -10,7 +10,7 @@
     android:id="@+id/toolbar_settings"
     android:layout_height="wrap_content"
     android:layout_width="match_parent"
-    android:theme="@style/AppTheme"
+    android:theme="@style/SettingsActionBar"
     android:minHeight="?attr/actionBarSize"
     android:background="?attr/colorPrimary"
     app:titleTextColor="@color/white" />

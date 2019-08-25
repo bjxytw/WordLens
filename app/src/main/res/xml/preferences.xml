@@ -14,6 +14,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_camera">
+        <ListPreference
+            android:defaultValue="200"
+            android:entries="@array/pref_zoom_ratio_list"
+            android:entryValues="@array/pref_zoom_ratio_list_values"
+            android:key="zoom_ratio_list"
+            android:title="@string/pref_zoom_ratio_title" />
         <SwitchPreference
             android:defaultValue="false"
             android:key="link_cursor_visible_switch"
@@ -30,6 +36,13 @@
         <Preference
             android:key="tts"
             android:title="@string/pref_tts" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_about">
+        <Preference
+            android:key="version"
+            android:title="@string/pref_version"
+            android:summary="@string/version_name" />
         <Preference
             android:key="license"
             android:title="@string/pref_license" />
@@ -38,4 +51,5 @@
                 android:data="@string/privacy_policy_url" />
         </Preference>
     </PreferenceCategory>
+
 </PreferenceScreen>

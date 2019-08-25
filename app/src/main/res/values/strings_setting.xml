@@ -23,6 +23,20 @@
         <item>eijiro</item>
     </string-array>
 
+    <string name="pref_zoom_ratio_title">ズーム時の倍率</string>
+    <string-array name="pref_zoom_ratio_list">
+        <item>1.25倍</item>
+        <item>1.5倍</item>
+        <item>2.0倍(デフォルト)</item>
+        <item>2.5倍</item>
+    </string-array>
+    <string-array name="pref_zoom_ratio_list_values">
+        <item>125</item>
+        <item>150</item>
+        <item>200</item>
+        <item>250</item>
+    </string-array>
+
     <string name="pref_custom_tabs_switch">Chromeカスタムタブを使用する</string>
     <string name="pref_custom_tabs_switch_summary">Chrome Custom Tabsを使用して検索結果を開く</string>
 
@@ -35,5 +49,7 @@
     <string name="pref_tts">テキスト読み上げ（TTS）の設定</string>
     <string name="pref_license">ライセンス</string>
     <string name="pref_privacy_policy">プライバシーポリシー</string>
+    <string name="pref_category_about">このアプリについて</string>
+    <string name="pref_version">バージョン</string>
 
 </resources>

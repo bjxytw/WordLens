@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_name">英単語レンズ</string>
-    <string name="recognizing_text" tools:ignore="TypographyEllipsis">認識中...</string>
     <string name="tutorial_message">画面をタップしてフォーカス</string>
+    <string name="tutorial_text">中心のカーソルを英単語に向かってかざすと、ここに意味が表示されます。</string>
     <string name="permission_request">アプリを開始できません。\n権限を許可して下さい。</string>
     <string name="flash_not_supported">フラッシュ機能はサポートされていません。</string>
+    <string name="zoom_not_supported">ズーム機能はサポートされていません。</string>
     <string name="copied_message">コピーしました</string>
     <string name="browser_cannot_open">ブラウザを開けません。</string>
     <string name="custom_tabs_cannot_open">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
     <string name="tts_not_supported">テキスト読み上げはサポートされていません。</string>
+    <string name="send_feedback">フィードバックを送信</string>
+    <string name="share_app">このアプリをシェア</string>
+    <string name="version_name">1.3.0</string>
 </resources>

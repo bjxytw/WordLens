@@ -19,16 +19,12 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/cameraToolLayout"/>
 
-    <ImageButton
-        android:id="@+id/settingsButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="5dp"
-        android:background="@drawable/menu_button_background"
-        android:contentDescription="@string/settingsButton"
-        app:srcCompat="@drawable/ic_menu_24dp" />
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"/>
 
     <RelativeLayout
         android:id="@+id/wordToolOverlay"
@@ -44,7 +40,6 @@
             android:layout_toStartOf="@id/searchButton"
             android:layout_marginStart="8dp"
             android:gravity="center_vertical"
-            android:text="@string/recognizing_text"
             android:textSize="24sp"
             android:textColor="@color/white"/>
 
@@ -86,6 +81,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
+            android:paddingBottom="2dp"
             android:background="@drawable/button_background"
             android:contentDescription="@string/flashButton" />
 
@@ -98,20 +94,19 @@
             android:contentDescription="@string/pauseButton"/>
 
         <ImageButton
-            android:id="@+id/zoomInButton"
+            android:id="@+id/zoomButton"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:background="@drawable/button_background"
-            android:contentDescription="@string/zoomButton"
-            android:src="@drawable/ic_zoom_24dp"/>
+            android:contentDescription="@string/zoomButton"/>
 
     </LinearLayout>
 
     <ScrollView
         android:id="@+id/meanView"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="252dp"
         android:layout_alignParentBottom="true"
         android:background="@color/colorBackground">
 
@@ -130,6 +125,7 @@
                     android:layout_marginTop="4dp"
                     android:background="@color/transparent"
                     android:contentDescription="@string/dictionaryBack"
+                    android:visibility="gone"
                     app:srcCompat="@drawable/ic_arrow_back" />
                 <ImageButton
                     android:id="@+id/textToSpeechButton"
@@ -139,12 +135,14 @@
                     android:layout_marginStart="2dp"
                     android:background="@color/transparent"
                     android:contentDescription="@string/textToSpeech"
+                    android:visibility="gone"
                     app:srcCompat="@drawable/ic_tts_24dp" />
                 <TextView
                     android:id="@+id/headText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
+                    android:visibility="gone"
                     android:textColor="@color/colorPrimaryText"
                     android:textSize="28sp" />
 
@@ -156,6 +154,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
+                android:layout_marginTop="2dp"
+                android:text="@string/tutorial_text"
                 android:textColor="@color/colorSecondaryText"
                 android:textSize="16sp" />
         </LinearLayout>

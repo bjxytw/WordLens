@@ -20,6 +20,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.PopupWindow;
@@ -37,6 +38,7 @@ import java.util.regex.Pattern;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.app.AppLaunchChecker;
 import androidx.core.content.ContextCompat;
@@ -64,6 +66,7 @@ public final class MainActivity extends AppCompatActivity
     private TextToSpeech textToSpeech;
     private ImageButton pauseButton;
     private ImageButton flashButton;
+    private ImageButton zoomButton;
     private ImageButton dictionaryBackButton;
     private ImageButton ttsButton;
     private ImageButton copyButton;
@@ -74,8 +77,10 @@ public final class MainActivity extends AppCompatActivity
     private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
     private String recognizedText;
     private String searchEngine;
+    private Integer zoomRatio;
     private boolean paused;
     private boolean flashed;
+    private boolean zoomed;
     private boolean BrowserOpened;
     private boolean useCustomTabs;
     private boolean cursorVisible;
@@ -91,26 +96,29 @@ public final class MainActivity extends AppCompatActivity
         cameraCursor = findViewById(R.id.graphicOverlay);
         pauseButton = findViewById(R.id.pauseButton);
         flashButton = findViewById(R.id.flashButton);
+        zoomButton = findViewById(R.id.zoomButton);
         dictionaryBackButton = findViewById(R.id.dictionaryBackButton);
         ttsButton = findViewById(R.id.textToSpeechButton);
         resultTextView = findViewById(R.id.resultText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
         meanView = findViewById(R.id.meanView);
-        ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton searchButton = findViewById(R.id.searchButton);
         copyButton = findViewById(R.id.copyButton);
 
         ButtonClick buttonListener = new ButtonClick();
+
         pauseButton.setOnClickListener(buttonListener);
         flashButton.setOnClickListener(buttonListener);
+        zoomButton.setOnClickListener(buttonListener);
         dictionaryBackButton.setOnClickListener(buttonListener);
-        dictionaryBackButton.setVisibility(View.GONE);
         ttsButton.setOnClickListener(buttonListener);
-        ttsButton.setVisibility(View.GONE);
-        settingsButton.setOnClickListener(buttonListener);
         searchButton.setOnClickListener(buttonListener);
         copyButton.setOnClickListener(buttonListener);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.inflateMenu(R.menu.menu_main);
+        toolbar.setOnMenuItemClickListener(new MenuItemClick());
 
         textRecognition = new TextRecognition(cameraCursor);
         textRecognition.setListener(this);
@@ -148,6 +156,8 @@ public final class MainActivity extends AppCompatActivity
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         searchEngine = preferences.getString(SettingsFragment.KEY_SEARCH_ENGINE, "google");
         useCustomTabs = preferences.getBoolean(SettingsFragment.KEY_CUSTOM_TABS, true);
+        String zoomRatioValue = preferences.getString(SettingsFragment.KEY_ZOOM_RATIO, "200");
+        zoomRatio = zoomRatioValue == null ? null : Integer.valueOf(zoomRatioValue);
         cursorVisible = preferences.getBoolean(SettingsFragment.KEY_CURSOR_VISIBLE, false);
         linkToPause = preferences.getBoolean(SettingsFragment.KEY_LINK_PAUSE, false);
     }
@@ -175,7 +185,7 @@ public final class MainActivity extends AppCompatActivity
                         setDictionaryText(linkDictionaryData);
                         if (linkToPause) {
                             stop();
-                            setPause(true);
+                            setPauseIcon(true);
                         }
                     }
                 }, linkData.getStart(), linkData.getEnd(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -201,6 +211,7 @@ public final class MainActivity extends AppCompatActivity
                 setDictionaryText(data);
                 dictionaryBackButton.setVisibility(View.GONE);
                 ttsButton.setVisibility(View.VISIBLE);
+                headTextView.setVisibility(View.VISIBLE);
                 linkHistory.clear();
                 linkHistory.add(data);
             }
@@ -226,9 +237,11 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        setPause(false);
-        setFlash(flashed);
+        setPauseIcon(false);
+        setFlashIcon(flashed);
+        setZoomIcon(zoomed);
         loadPreferences();
+        if (camera != null) camera.setZoomRatio(zoomRatio);
         cameraCursor.setAreaVisible(cursorVisible);
         BrowserOpened = false;
         startCameraSource();
@@ -255,16 +268,22 @@ public final class MainActivity extends AppCompatActivity
         preview.stop();
     }
 
-    private void setPause(boolean pause) {
+    private void setPauseIcon(boolean pause) {
         if (pause) pauseButton.setImageResource(R.drawable.ic_play);
         else pauseButton.setImageResource(R.drawable.ic_pause);
         paused = pause;
     }
 
-    private void setFlash(boolean on) {
-        if (on) flashButton.setImageResource(R.drawable.ic_highlight_on);
+    private void setFlashIcon(boolean flash) {
+        if (flash) flashButton.setImageResource(R.drawable.ic_highlight_on);
         else flashButton.setImageResource(R.drawable.ic_highlight_off);
-        flashed = on;
+        flashed = flash;
+    }
+
+    private void setZoomIcon(boolean zoom) {
+        if (zoom) zoomButton.setImageResource(R.drawable.ic_zoomed_24dp);
+        else zoomButton.setImageResource(R.drawable.ic_zoom_default_24dp);
+        zoomed = zoom;
     }
 
     private void searchOnBrowser() {
@@ -357,26 +376,34 @@ public final class MainActivity extends AppCompatActivity
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
-                case R.id.settingsButton:
-                    Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                    startActivity(intent);
-                    break;
                 case R.id.pauseButton:
                     if (paused) startCameraSource();
                     else stop();
-                    setPause(!paused);
+                    setPauseIcon(!paused);
                     break;
                 case R.id.flashButton:
                     if (camera != null && !paused) {
                         if (!flashed) {
-                            if (camera.cameraFlash(true))
-                                setFlash(true);
+                            if (camera.cameraFlash(true)) setFlashIcon(true);
                             else Toast.makeText(MainActivity.this,
                                     getString(R.string.flash_not_supported),
                                     Toast.LENGTH_SHORT).show();
                         } else {
                             camera.cameraFlash(false);
-                            setFlash(false);
+                            setFlashIcon(false);
+                        }
+                    }
+                    break;
+                case R.id.zoomButton:
+                    if (camera != null && !paused) {
+                        if (!zoomed) {
+                            if (camera.cameraZoom(true)) setZoomIcon(true);
+                            else Toast.makeText(MainActivity.this,
+                                    getString(R.string.zoom_not_supported),
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            camera.cameraZoom(false);
+                            setZoomIcon(false);
                         }
                     }
                     break;
@@ -395,13 +422,27 @@ public final class MainActivity extends AppCompatActivity
                     }
                     break;
                 case R.id.searchButton:
-                    if (!BrowserOpened && recognizedText != null)
-                        searchOnBrowser();
+                    if (!BrowserOpened && recognizedText != null) searchOnBrowser();
                     break;
                 case R.id.copyButton:
-                    if (recognizedText != null)
-                        copyToClipboard();
+                    if (recognizedText != null) copyToClipboard();
             }
+        }
+    }
+
+    private class MenuItemClick implements Toolbar.OnMenuItemClickListener {
+        @Override
+        public boolean onMenuItemClick(MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.menu_settings:
+                    Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                    startActivity(intent);
+                    break;
+                case R.id.menu_feedback:
+                    break;
+                case R.id.menu_share_app:
+            }
+            return false;
         }
     }
 
