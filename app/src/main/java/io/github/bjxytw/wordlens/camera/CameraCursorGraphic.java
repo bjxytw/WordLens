@@ -19,7 +19,10 @@ public class CameraCursorGraphic extends View {
     private static final int CURSOR_AREA_SIZE = 90;
     private static final float CURSOR_STROKE_WIDTH = 4.0f;
 
-    private static final int RECOGNITION_AREA_COLOR = Color.LTGRAY;
+    public static final int AREA_DEFAULT_COLOR = Color.LTGRAY;
+    public static final int AREA_FOCUSING_COLOR = Color.WHITE;
+    public static final int AREA_FOCUS_SUCCESS_COLOR = Color.GREEN;
+
     @FloatRange(from = 0.0, to = 1.0)
     private static final float RECOGNITION_AREA_WIDTH_RATIO = 0.6f;
     @FloatRange(from = 0.0, to = 1.0)
@@ -66,7 +69,6 @@ public class CameraCursorGraphic extends View {
         areaPaint = new Paint();
         areaPaint.setStyle(Paint.Style.STROKE);
         areaPaint.setStrokeWidth(CURSOR_STROKE_WIDTH);
-        areaPaint.setColor(RECOGNITION_AREA_COLOR);
         areaPaint.setAntiAlias(true);
 
         setCursorRecognizing(false);
@@ -114,8 +116,9 @@ public class CameraCursorGraphic extends View {
         return cameraRecognitionRect;
     }
 
-    public void setAreaVisible(boolean visible) {
+    public void setAreaGraphics(boolean visible, int color) {
         areaVisible = visible;
+        areaPaint.setColor(color);
     }
 
     @Override

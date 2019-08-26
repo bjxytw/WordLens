@@ -45,6 +45,7 @@ public class CameraSource {
     private Camera camera;
     private Size size;
     private List<Camera.Area> focusArea;
+    private  AutoFocusFinishedListener autoFocusListener;
     private Integer requestedZoomRatio;
     private int zoomStep;
 
@@ -54,9 +55,14 @@ public class CameraSource {
     private boolean flashed;
     private boolean zoomed;
 
-    public CameraSource(TextRecognition textRecognition) {
+    public interface AutoFocusFinishedListener {
+        void onAutoFocus(boolean success);
+    }
+
+    public CameraSource(TextRecognition textRecognition, AutoFocusFinishedListener listener) {
         processRunnable = new ProcessRunnable();
         this.textRecognition = textRecognition;
+        autoFocusListener = listener;
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)
@@ -177,7 +183,8 @@ public class CameraSource {
         camera.autoFocus(new Camera.AutoFocusCallback() {
             @Override
             public void onAutoFocus(boolean success, Camera camera) {
-                Log.i(TAG, "AutoFocus: " + success); }
+                autoFocusListener.onAutoFocus(success);
+            }
         });
     }
 

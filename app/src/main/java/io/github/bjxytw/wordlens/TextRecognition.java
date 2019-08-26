@@ -32,12 +32,9 @@ public class TextRecognition {
         void onRecognitionResult(String result);
     }
 
-    TextRecognition(CameraCursorGraphic cursor) {
+    TextRecognition(CameraCursorGraphic cursor, TextRecognitionListener listener) {
         detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
         this.cursor = cursor;
-    }
-
-    void setListener(TextRecognitionListener listener) {
         this.listener = listener;
     }
 
@@ -96,7 +93,7 @@ public class TextRecognition {
             }
         }
 
-        if (detectedElement != null && listener != null) {
+        if (detectedElement != null) {
             cursor.setCursorRecognizing(true);
             listener.onRecognitionResult(detectedElement.getText());
         } else cursor.setCursorRecognizing(false);

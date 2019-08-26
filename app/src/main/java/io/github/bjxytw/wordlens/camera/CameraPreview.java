@@ -27,8 +27,8 @@ public class CameraPreview extends SurfaceView {
         getHolder().addCallback(new SurfaceCallback());
     }
 
-    public void start(CameraSource camera, CameraCursorGraphic overlay) throws IOException {
-        if (camera == null) stop();
+    public void cameraStart(CameraSource camera, CameraCursorGraphic overlay) throws IOException {
+        if (camera == null) cameraStop();
 
         this.camera = camera;
         this.cursor = overlay;
@@ -48,7 +48,7 @@ public class CameraPreview extends SurfaceView {
         }
     }
 
-    public void stop() {
+    public void cameraStop() {
         if (camera != null) camera.stop();
     }
 
@@ -56,8 +56,7 @@ public class CameraPreview extends SurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        if (camera != null && surfaceAvailable && event.getY() < cursor.getHeight())
-            camera.cameraFocus();
+        if (surfaceAvailable && event.getY() < cursor.getHeight()) cameraFocus();
         return true;
     }
 
@@ -81,10 +80,17 @@ public class CameraPreview extends SurfaceView {
                     cursor.setScale(cameraWidth, cameraHeight, width, height);
                     cursor.postInvalidate();
                     camera.setCameraFocusArea(cursor.getCameraCursorRect());
-                    camera.cameraFocus();
+                    cameraFocus();
                 }
             }
         }
+    }
+
+    private void cameraFocus() {
+        if (camera == null) return;
+        camera.cameraFocus();
+        if (cursor == null) return;
+        cursor.setAreaGraphics(true, CameraCursorGraphic.AREA_FOCUSING_COLOR);
     }
 
     private class SurfaceCallback implements SurfaceHolder.Callback {
@@ -94,7 +100,7 @@ public class CameraPreview extends SurfaceView {
             try {
                 startIfReady();
             } catch (IOException e) {
-                Log.e(TAG, "Could not start camera source.", e);
+                Log.e(TAG, "Could not cameraStart camera source.", e);
             }
         }
 

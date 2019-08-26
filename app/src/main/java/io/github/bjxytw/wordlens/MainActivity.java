@@ -1,13 +1,13 @@
 package io.github.bjxytw.wordlens;
 
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,14 +19,20 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,26 +42,18 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.core.app.AppLaunchChecker;
-import androidx.core.content.ContextCompat;
-
-import com.google.android.material.snackbar.Snackbar;
-
+import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
 import io.github.bjxytw.wordlens.data.DictionaryData;
-import io.github.bjxytw.wordlens.db.DictionarySearch;
-import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 import io.github.bjxytw.wordlens.data.LinkTextData;
+import io.github.bjxytw.wordlens.db.DictionarySearch;
 import io.github.bjxytw.wordlens.settings.SettingsActivity;
 import io.github.bjxytw.wordlens.settings.SettingsFragment;
 
 public final class MainActivity extends AppCompatActivity
-        implements TextRecognition.TextRecognitionListener, TextToSpeech.OnInitListener {
+        implements TextRecognition.TextRecognitionListener,
+        CameraSource.AutoFocusFinishedListener, TextToSpeech.OnInitListener {
     private static final String TAG = "MainActivity";
     private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
     private CameraSource camera;
@@ -120,8 +118,7 @@ public final class MainActivity extends AppCompatActivity
         toolbar.inflateMenu(R.menu.menu_main);
         toolbar.setOnMenuItemClickListener(new MenuItemClick());
 
-        textRecognition = new TextRecognition(cameraCursor);
-        textRecognition.setListener(this);
+        textRecognition = new TextRecognition(cameraCursor, this);
 
         dictionary = new DictionarySearch(this);
 
@@ -133,18 +130,13 @@ public final class MainActivity extends AppCompatActivity
     }
 
     private void processAfterGranted() {
-        if (camera == null) camera = new CameraSource(textRecognition);
-
-        if (!AppLaunchChecker.hasStartedFromLauncher(getApplicationContext())) {
-            showTutorialWindow(this, cameraCursor);
-            AppLaunchChecker.onActivityCreate(this);
-        }
+        if (camera == null) camera = new CameraSource(textRecognition, this);
     }
 
     private void startCameraSource() {
         if (camera == null) return;
         try {
-            preview.start(camera, cameraCursor);
+            preview.cameraStart(camera, cameraCursor);
         } catch (IOException e) {
             Log.e(TAG, "failed to start camera source.", e);
             camera.release();
@@ -235,6 +227,20 @@ public final class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onAutoFocus(boolean success) {
+        if (success) {
+            cameraCursor.setAreaGraphics(
+                    true, CameraCursorGraphic.AREA_FOCUS_SUCCESS_COLOR);
+        }
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
+            }
+        }, 500L);
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         setPauseIcon(false);
@@ -242,7 +248,7 @@ public final class MainActivity extends AppCompatActivity
         setZoomIcon(zoomed);
         loadPreferences();
         if (camera != null) camera.setZoomRatio(zoomRatio);
-        cameraCursor.setAreaVisible(cursorVisible);
+        cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
         BrowserOpened = false;
         startCameraSource();
     }
@@ -265,7 +271,7 @@ public final class MainActivity extends AppCompatActivity
     }
 
     private void stop() {
-        preview.stop();
+        preview.cameraStop();
     }
 
     private void setPauseIcon(boolean pause) {
@@ -435,41 +441,52 @@ public final class MainActivity extends AppCompatActivity
         public boolean onMenuItemClick(MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.menu_settings:
-                    Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                    startActivity(intent);
+                    Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                    startActivity(settingsIntent);
                     break;
                 case R.id.menu_feedback:
+                    final String[] items = {
+                            getString(R.string.write_review),
+                            getString(R.string.send_email)};
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle(getString(R.string.send_feedback))
+                            .setItems(items, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    switch (which) {
+                                        case 0:
+                                            Uri uri = Uri.parse(getString(R.string.market_uri) + getPackageName());
+                                            Intent market = new Intent(Intent.ACTION_VIEW, uri);
+                                            market.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
+                                                    Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
+                                                    Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                                            try {
+                                                startActivity(market);
+                                            } catch (ActivityNotFoundException e) {
+                                                startActivity(new Intent(Intent.ACTION_VIEW,
+                                                        Uri.parse(getString(R.string.google_play_url) + getPackageName())));
+                                            }
+                                            break;
+                                        case 1:
+                                            Intent emailIntent = new Intent(Intent.ACTION_SENDTO,
+                                                    Uri.fromParts("mailto", getString(R.string.dev_email_address), null));
+                                            emailIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.feedback_subject));
+                                            startActivity(Intent.createChooser(emailIntent, getString(R.string.mail_chooser_title)));
+                                            break;
+                                    }
+                                }
+                            }).show();
                     break;
                 case R.id.menu_share_app:
+                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                    shareIntent.setType("text/plain");
+                    String shareText = getString(R.string.app_name_on_market) + " " +
+                            getString(R.string.google_play_url) + getPackageName();
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+                    startActivity(shareIntent);
+
             }
             return false;
         }
-    }
-
-    private static void showTutorialWindow(final Context context, final View view) {
-        view.post(new Runnable() {
-            @Override
-            public void run() {
-                final PopupWindow tutorialPopup = new PopupWindow(context);
-                TextView tutorialText = new TextView(context);
-                tutorialText.setText(context.getString(R.string.tutorial_message));
-                tutorialText.setTextColor(Color.WHITE);
-                tutorialText.setTextSize(17.0f);
-                tutorialText.setShadowLayer(2.0f, 0.0f, 0.0f,
-                        ContextCompat.getColor(context, R.color.colorPopupShadow));
-                tutorialPopup.setContentView(tutorialText);
-                tutorialPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                tutorialPopup.setOutsideTouchable(true);
-                tutorialPopup.setAnimationStyle(R.style.PopupAnimation);
-                tutorialPopup.showAtLocation(view, Gravity.TOP, 0, 120);
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        tutorialPopup.dismiss();
-                    }
-                }, 6000L);
-            }
-        });
     }
 }
