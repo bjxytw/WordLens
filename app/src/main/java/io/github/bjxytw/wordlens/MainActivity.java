@@ -67,6 +67,7 @@ public final class MainActivity extends AppCompatActivity
     private ImageButton zoomButton;
     private ImageButton dictionaryBackButton;
     private ImageButton ttsButton;
+    private ImageButton searchButton;
     private ImageButton copyButton;
     private TextView resultTextView;
     private TextView headTextView;
@@ -101,7 +102,7 @@ public final class MainActivity extends AppCompatActivity
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
         meanView = findViewById(R.id.meanView);
-        ImageButton searchButton = findViewById(R.id.searchButton);
+        searchButton = findViewById(R.id.searchButton);
         copyButton = findViewById(R.id.copyButton);
 
         ButtonClick buttonListener = new ButtonClick();
@@ -316,7 +317,10 @@ public final class MainActivity extends AppCompatActivity
             default: return;
         }
         searchURL.append(recognizedText);
+        openInBrowser(searchURL.toString(), useCustomTabs);
+    }
 
+    private void openInBrowser(String url, boolean useCustomTabs) {
         if (useCustomTabs) {
             try {
                 CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
@@ -324,7 +328,7 @@ public final class MainActivity extends AppCompatActivity
                         .setToolbarColor(ContextCompat.getColor(this, R.color.colorPrimary))
                         .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                         .build();
-                tabsIntent.launchUrl(this, Uri.parse(searchURL.toString()));
+                tabsIntent.launchUrl(this, Uri.parse(url));
                 BrowserOpened = true;
             } catch (ActivityNotFoundException e) {
                 Log.e(TAG, e.toString());
@@ -333,7 +337,7 @@ public final class MainActivity extends AppCompatActivity
             }
         } else {
             try {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(searchURL.toString()));
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 startActivity(intent);
             } catch (ActivityNotFoundException e) {
                 Log.e(TAG, e.toString());
@@ -346,20 +350,16 @@ public final class MainActivity extends AppCompatActivity
     private void copyToClipboard() {
         ClipboardManager clipboardManager =
                 (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        View view = findViewById(android.R.id.content);
-        if (clipboardManager == null || view == null) return;
-
-        copyButton.setEnabled(false);
-        new Handler().postDelayed(new Runnable() {
-            public void run() {
-                copyButton.setEnabled(true);
-            }
-        }, 2000L);
+        if (clipboardManager == null) return;
 
         clipboardManager.setPrimaryClip(
                 ClipData.newPlainText("recognizedText", recognizedText));
-        Snackbar.make(view, getString(R.string.copied_message), Snackbar.LENGTH_SHORT).show();
+        makeSnackBar(getString(R.string.copied_message));
+    }
 
+    private void makeSnackBar(String message) {
+        View view = findViewById(android.R.id.content);
+        if (view != null) Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
     }
 
     @Override
@@ -428,10 +428,23 @@ public final class MainActivity extends AppCompatActivity
                     }
                     break;
                 case R.id.searchButton:
-                    if (!BrowserOpened && recognizedText != null) searchOnBrowser();
+                    if (BrowserOpened) break;
+                    searchButton.setEnabled(false);
+                    new Handler().postDelayed(new Runnable() {
+                        public void run() { searchButton.setEnabled(true);
+                        }
+                    }, 2000L);
+                    if (recognizedText != null) searchOnBrowser();
+                    else makeSnackBar(getString(R.string.not_detected));
                     break;
                 case R.id.copyButton:
+                    copyButton.setEnabled(false);
+                    new Handler().postDelayed(new Runnable() {
+                        public void run() { copyButton.setEnabled(true);
+                        }
+                    }, 2000L);
                     if (recognizedText != null) copyToClipboard();
+                    else makeSnackBar(getString(R.string.not_detected));
             }
         }
     }
@@ -443,6 +456,9 @@ public final class MainActivity extends AppCompatActivity
                 case R.id.menu_settings:
                     Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
                     startActivity(settingsIntent);
+                    break;
+                case R.id.menu_help:
+                    openInBrowser(getString(R.string.help_url), true);
                     break;
                 case R.id.menu_feedback:
                     final String[] items = {
@@ -484,7 +500,6 @@ public final class MainActivity extends AppCompatActivity
                             getString(R.string.google_play_url) + getPackageName();
                     shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
                     startActivity(shareIntent);
-
             }
             return false;
         }

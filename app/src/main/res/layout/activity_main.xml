@@ -19,7 +19,6 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/cameraToolLayout"/>
 
-
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -106,7 +105,7 @@
     <ScrollView
         android:id="@+id/meanView"
         android:layout_width="match_parent"
-        android:layout_height="252dp"
+        android:layout_height="232dp"
         android:layout_alignParentBottom="true"
         android:background="@color/colorBackground">
 

@@ -171,11 +171,11 @@ public class CameraSource {
         return camera;
     }
 
-    synchronized void cameraFocus() {
-        if (camera == null || !supportedAutoFocus || focusArea == null) return;
+    synchronized boolean cameraFocus() {
+        if (camera == null || !supportedAutoFocus || focusArea == null) return false;
 
         Camera.Parameters parameters = camera.getParameters();
-        if (parameters == null) return;
+        if (parameters == null) return false;
 
         parameters.setFocusAreas(focusArea);
         camera.setParameters(parameters);
@@ -186,6 +186,7 @@ public class CameraSource {
                 autoFocusListener.onAutoFocus(success);
             }
         });
+        return true;
     }
 
     public synchronized boolean cameraFlash(boolean flash){

@@ -7,6 +7,7 @@
     <string name="wikipedia_en_search_url">https://en.wikipedia.org/w/index.php?search=</string>
     <string name="eijiro_search_url">https://eow.alc.co.jp/search?q=</string>
     <string name="privacy_policy_url">https://bjxytw.github.io/wordlens-privacy-policy/</string>
+    <string name="help_url">https://bjxytw.github.io/wordlens-help/</string>
     <string name="google_play_url">http://play.google.com/store/apps/details?id=</string>
     <string name="market_uri">market://details?id=</string>
     <string name="dev_email_address">"sk4rd.xzk@gmail.com"</string>

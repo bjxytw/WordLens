@@ -88,8 +88,7 @@ public class CameraPreview extends SurfaceView {
 
     private void cameraFocus() {
         if (camera == null) return;
-        camera.cameraFocus();
-        if (cursor == null) return;
+        if (!camera.cameraFocus() || cursor == null) return;
         cursor.setAreaGraphics(true, CameraCursorGraphic.AREA_FOCUSING_COLOR);
     }
 
