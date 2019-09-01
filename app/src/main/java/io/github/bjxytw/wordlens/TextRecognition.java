@@ -1,8 +1,9 @@
 package io.github.bjxytw.wordlens;
 
 import android.graphics.Rect;
-import androidx.annotation.NonNull;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -12,14 +13,14 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
-import io.github.bjxytw.wordlens.camera.CameraSource;
-import io.github.bjxytw.wordlens.data.ImageData;
-import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+
+import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
+import io.github.bjxytw.wordlens.camera.CameraSource;
+import io.github.bjxytw.wordlens.data.ImageData;
 
 public class TextRecognition {
     private static final String TAG = "TextRecognition";
@@ -74,6 +75,7 @@ public class TextRecognition {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Log.e(TAG, "Text detection failed.", e);
+                        listener.onRecognitionResult(null);
                     }
                 });
     }

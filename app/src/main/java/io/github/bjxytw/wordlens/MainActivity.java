@@ -33,6 +33,7 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ public final class MainActivity extends AppCompatActivity
         CameraSource.AutoFocusFinishedListener, TextToSpeech.OnInitListener {
     private static final String TAG = "MainActivity";
     private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
+    private FirebaseAnalytics analytics;
     private CameraSource camera;
     private CameraPreview preview;
     private CameraCursorGraphic cameraCursor;
@@ -124,6 +126,8 @@ public final class MainActivity extends AppCompatActivity
         dictionary = new DictionarySearch(this);
 
         textToSpeech = new TextToSpeech(this, this);
+
+        analytics = FirebaseAnalytics.getInstance(this);
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
             processAfterGranted();
@@ -194,6 +198,15 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onRecognitionResult(String resultText) {
         if (paused) return;
+
+        if (resultText == null) {
+            Toast.makeText(this, getString(R.string.detect_failed), Toast.LENGTH_LONG).show();
+            Bundle params = new Bundle();
+            params.putInt("failed", 0);
+            analytics.logEvent("text_detection_failed", params);
+            return;
+        }
+
         String text = DictionarySearch.removeBothEndSymbol(resultText);
         if (text != null && dictionary != null && !text.equals(recognizedText)) {
             recognizedText = text;
@@ -500,6 +513,10 @@ public final class MainActivity extends AppCompatActivity
                             getString(R.string.google_play_url) + getPackageName();
                     shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
                     startActivity(shareIntent);
+
+                    Bundle params = new Bundle();
+                    params.putInt("share", 0);
+                    analytics.logEvent("app_share", params);
             }
             return false;
         }

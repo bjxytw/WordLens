@@ -180,12 +180,19 @@ public class CameraSource {
         parameters.setFocusAreas(focusArea);
         camera.setParameters(parameters);
         camera.cancelAutoFocus();
-        camera.autoFocus(new Camera.AutoFocusCallback() {
-            @Override
-            public void onAutoFocus(boolean success, Camera camera) {
-                autoFocusListener.onAutoFocus(success);
-            }
-        });
+
+        try {
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    autoFocusListener.onAutoFocus(success);
+                }
+            });
+        } catch (RuntimeException e) {
+            Log.e(TAG, e.toString());
+            return false;
+        }
+
         return true;
     }
 
