@@ -181,8 +181,9 @@ public final class MainActivity extends AppCompatActivity
                         linkHistory.add(linkDictionaryData);
                         setDictionaryText(linkDictionaryData);
                         if (linkToPause) {
-                            stop();
-                            setPauseIcon(true);
+                            cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
+                            preview.cameraStop();
+                            setPause(true);
                         }
                     }
                 }, linkData.getStart(), linkData.getEnd(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -257,9 +258,9 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        setPauseIcon(false);
-        setFlashIcon(flashed);
-        setZoomIcon(zoomed);
+        setPause(false);
+        setFlash(flashed);
+        setZoom(zoomed);
         loadPreferences();
         if (camera != null) camera.setZoomRatio(zoomRatio);
         cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
@@ -269,7 +270,7 @@ public final class MainActivity extends AppCompatActivity
 
     @Override
     protected void onPause() {
-        stop();
+        preview.cameraStop();
         super.onPause();
     }
 
@@ -284,56 +285,36 @@ public final class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
-    private void stop() {
-        preview.cameraStop();
-    }
-
-    private void setPauseIcon(boolean pause) {
-        if (pause) pauseButton.setImageResource(R.drawable.ic_play);
-        else pauseButton.setImageResource(R.drawable.ic_pause);
+    private void setPause(boolean pause) {
+        pauseButton.setImageResource(pause ? R.drawable.ic_play : R.drawable.ic_pause);
         paused = pause;
     }
 
-    private void setFlashIcon(boolean flash) {
-        if (flash) flashButton.setImageResource(R.drawable.ic_highlight_on);
-        else flashButton.setImageResource(R.drawable.ic_highlight_off);
+    private void setFlash(boolean flash) {
+        flashButton.setImageResource(flash ? R.drawable.ic_highlight_on : R.drawable.ic_highlight_off);
         flashed = flash;
     }
 
-    private void setZoomIcon(boolean zoom) {
-        if (zoom) zoomButton.setImageResource(R.drawable.ic_zoomed_24dp);
-        else zoomButton.setImageResource(R.drawable.ic_zoom_default_24dp);
+    private void setZoom(boolean zoom) {
+        zoomButton.setImageResource(zoom ? R.drawable.ic_zoomed_24dp : R.drawable.ic_zoom_default_24dp);
         zoomed = zoom;
     }
 
-    private void searchOnBrowser() {
-        StringBuilder searchURL = new StringBuilder();
-        switch (searchEngine) {
-            case "google":
-                searchURL.append(getString(R.string.google_search_url));
+    private void searchOnWeb() {
+        String[] engineList = getResources().getStringArray(R.array.pref_search_engine_list_values);
+        String[] engineUrlList = getResources().getStringArray(R.array.search_engine_url_list);
+
+        if (engineList.length != engineUrlList.length) return;
+
+        for (int i = 0; i < engineList.length; i++) {
+            if (engineList[i].equals(searchEngine)) {
+                openBrowser(engineUrlList[i] + recognizedText, useCustomTabs);
                 break;
-            case "yahoo":
-                searchURL.append(getString(R.string.yahoo_search_url));
-                break;
-            case "bing":
-                searchURL.append(getString(R.string.bing_search_url));
-                break;
-            case "wikipedia_jp":
-                searchURL.append(getString(R.string.wikipedia_jp_search_url));
-                break;
-            case "wikipedia_en":
-                searchURL.append(getString(R.string.wikipedia_en_search_url));
-                break;
-            case "eijiro":
-                searchURL.append(getString(R.string.eijiro_search_url));
-                break;
-            default: return;
+            }
         }
-        searchURL.append(recognizedText);
-        openInBrowser(searchURL.toString(), useCustomTabs);
     }
 
-    private void openInBrowser(String url, boolean useCustomTabs) {
+    private void openBrowser(String url, boolean useCustomTabs) {
         if (useCustomTabs) {
             try {
                 CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
@@ -396,33 +377,38 @@ public final class MainActivity extends AppCompatActivity
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.pauseButton:
-                    if (paused) startCameraSource();
-                    else stop();
-                    setPauseIcon(!paused);
+                    if (paused) {
+                        startCameraSource();
+                        setPause(false);
+                    } else {
+                        cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
+                        preview.cameraStop();
+                        setPause(true);
+                    }
                     break;
                 case R.id.flashButton:
                     if (camera != null && !paused) {
                         if (!flashed) {
-                            if (camera.cameraFlash(true)) setFlashIcon(true);
+                            if (camera.cameraFlash(true)) setFlash(true);
                             else Toast.makeText(MainActivity.this,
                                     getString(R.string.flash_not_supported),
                                     Toast.LENGTH_SHORT).show();
                         } else {
                             camera.cameraFlash(false);
-                            setFlashIcon(false);
+                            setFlash(false);
                         }
                     }
                     break;
                 case R.id.zoomButton:
                     if (camera != null && !paused) {
                         if (!zoomed) {
-                            if (camera.cameraZoom(true)) setZoomIcon(true);
+                            if (camera.cameraZoom(true)) setZoom(true);
                             else Toast.makeText(MainActivity.this,
                                     getString(R.string.zoom_not_supported),
                                     Toast.LENGTH_SHORT).show();
                         } else {
                             camera.cameraZoom(false);
-                            setZoomIcon(false);
+                            setZoom(false);
                         }
                     }
                     break;
@@ -447,7 +433,7 @@ public final class MainActivity extends AppCompatActivity
                         public void run() { searchButton.setEnabled(true);
                         }
                     }, 2000L);
-                    if (recognizedText != null) searchOnBrowser();
+                    if (recognizedText != null) searchOnWeb();
                     else makeSnackBar(getString(R.string.not_detected));
                     break;
                 case R.id.copyButton:
@@ -471,7 +457,7 @@ public final class MainActivity extends AppCompatActivity
                     startActivity(settingsIntent);
                     break;
                 case R.id.menu_help:
-                    openInBrowser(getString(R.string.help_url), true);
+                    openBrowser(getString(R.string.help_url), true);
                     break;
                 case R.id.menu_feedback:
                     final String[] items = {

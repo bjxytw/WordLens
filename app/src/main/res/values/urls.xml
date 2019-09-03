@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="google_search_url">https://www.google.com/search?q=</string>
-    <string name="yahoo_search_url">https://search.yahoo.co.jp/search?p=</string>
-    <string name="bing_search_url">https://www.bing.com/search?q=</string>
-    <string name="wikipedia_jp_search_url">https://ja.wikipedia.org/w/index.php?search=</string>
-    <string name="wikipedia_en_search_url">https://en.wikipedia.org/w/index.php?search=</string>
-    <string name="eijiro_search_url">https://eow.alc.co.jp/search?q=</string>
     <string name="privacy_policy_url">https://bjxytw.github.io/wordlens-privacy-policy/</string>
     <string name="help_url">https://bjxytw.github.io/wordlens-help/</string>
     <string name="google_play_url">http://play.google.com/store/apps/details?id=</string>

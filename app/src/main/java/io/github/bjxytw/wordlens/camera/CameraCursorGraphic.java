@@ -124,10 +124,8 @@ public class CameraCursorGraphic extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        synchronized (lock) {
-            drawCursor(canvas);
-            if (areaVisible) drawArea(canvas);
-        }
+        drawCursor(canvas);
+        if (areaVisible) drawArea(canvas);
     }
 
     private void drawCursor(Canvas canvas) {
