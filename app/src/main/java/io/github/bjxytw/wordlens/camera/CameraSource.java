@@ -174,14 +174,13 @@ public class CameraSource {
     synchronized boolean cameraFocus() {
         if (camera == null || !supportedAutoFocus || focusArea == null) return false;
 
-        Camera.Parameters parameters = camera.getParameters();
-        if (parameters == null) return false;
-
-        parameters.setFocusAreas(focusArea);
-        camera.setParameters(parameters);
-        camera.cancelAutoFocus();
-
         try {
+            Camera.Parameters parameters = camera.getParameters();
+            if (parameters == null) return false;
+
+            parameters.setFocusAreas(focusArea);
+            camera.setParameters(parameters);
+            camera.cancelAutoFocus();
             camera.autoFocus(new Camera.AutoFocusCallback() {
                 @Override
                 public void onAutoFocus(boolean success, Camera camera) {

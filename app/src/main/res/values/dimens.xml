@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dictionary_view_height">288dp</dimen>
+    <dimen name="dictionary_scroll_view_height">230dp</dimen>
+</resources>

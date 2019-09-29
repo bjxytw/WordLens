@@ -7,7 +7,6 @@
     <string name="permission_request">アプリを開始できません。\n権限を許可して下さい。</string>
     <string name="flash_not_supported">フラッシュ機能に対応していない機種です。</string>
     <string name="zoom_not_supported">ズーム機能に対応していない機種です。</string>
-    <string name="copied_message">コピーしました</string>
     <string name="not_detected">単語を認識していません。</string>
     <string name="detect_failed">テキストの認識に失敗しました。\nGoogle Play 開発者サービスの更新又はキャッシュの削除をお試し下さい。</string>
     <string name="browser_cannot_open">ブラウザがインストールされていません。</string>

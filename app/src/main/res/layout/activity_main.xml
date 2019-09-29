@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,12 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <io.github.bjxytw.wordlens.camera.CameraCursorGraphic
-        android:id="@+id/graphicOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/cameraToolLayout"/>
-
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -26,139 +21,185 @@
         android:background="@android:color/transparent"/>
 
     <RelativeLayout
-        android:id="@+id/wordToolOverlay"
+        android:id="@+id/cameraPreviewLayout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_above="@id/cameraToolLayout"
-        android:background="@color/colorWordToolBackground">
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/dictionary_view_height"
+        android:layout_gravity="bottom">
 
-        <TextView
-            android:id="@+id/resultText"
+        <io.github.bjxytw.wordlens.camera.CameraCursorGraphic
+            android:id="@+id/graphicOverlay"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_toStartOf="@id/searchButton"
-            android:layout_marginStart="8dp"
-            android:gravity="center_vertical"
-            android:textSize="24sp"
-            android:textColor="@color/white"/>
-
-        <ImageButton
-            android:id="@+id/copyButton"
-            android:layout_width="40dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="4dp"
-            android:background="@color/transparent"
-            android:contentDescription="@string/copyButton"
-            app:srcCompat="@drawable/ic_content_copy" />
-
-        <ImageButton
-            android:id="@+id/searchButton"
-            android:layout_width="40dp"
-            android:layout_height="match_parent"
-            android:layout_toStartOf="@id/copyButton"
-            android:background="@color/transparent"
-            android:contentDescription="@string/searchButton"
-            app:srcCompat="@drawable/ic_search" />
-
-        <View
-            android:id="@+id/border_line"
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:layout_alignParentBottom="true"
-            android:background="@color/colorAccent"/>
-    </RelativeLayout>
-
-    <LinearLayout
-        android:id="@+id/cameraToolLayout"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_above="@+id/meanView">
-
-        <ImageButton
-            android:id="@+id/flashButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:paddingBottom="2dp"
-            android:background="@drawable/button_background"
-            android:contentDescription="@string/flashButton" />
-
-        <ImageButton
-            android:id="@+id/pauseButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:background="@drawable/button_background"
-            android:contentDescription="@string/pauseButton"/>
-
-        <ImageButton
-            android:id="@+id/zoomButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:background="@drawable/button_background"
-            android:contentDescription="@string/zoomButton"/>
-
-    </LinearLayout>
-
-    <ScrollView
-        android:id="@+id/meanView"
-        android:layout_width="match_parent"
-        android:layout_height="232dp"
-        android:layout_alignParentBottom="true"
-        android:background="@color/colorBackground">
+            android:layout_height="match_parent"/>
 
         <LinearLayout
+            android:id="@+id/cameraToolLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <LinearLayout
-                android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/camera_tool_background">
+
+            <ImageButton
+                android:id="@+id/flashButton"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:orientation="horizontal">
-                <ImageButton
-                    android:id="@+id/dictionaryBackButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/transparent"
-                    android:contentDescription="@string/dictionaryBack"
-                    android:visibility="gone"
-                    app:srcCompat="@drawable/ic_arrow_back" />
-                <ImageButton
-                    android:id="@+id/textToSpeechButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginStart="2dp"
-                    android:background="@color/transparent"
-                    android:contentDescription="@string/textToSpeech"
-                    android:visibility="gone"
-                    app:srcCompat="@drawable/ic_tts_24dp" />
-                <TextView
-                    android:id="@+id/headText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:visibility="gone"
-                    android:textColor="@color/colorPrimaryText"
-                    android:textSize="28sp" />
+                android:layout_weight="3"
+                android:paddingBottom="2dp"
+                android:background="@color/transparent"
+                android:contentDescription="@string/flashButton" />
 
-            </LinearLayout>
+            <ImageButton
+                android:id="@+id/pauseButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="4"
+                android:background="@color/transparent"
+                android:contentDescription="@string/pauseButton"/>
 
-            <TextView
-                android:id="@+id/meanText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:layout_marginTop="2dp"
-                android:text="@string/tutorial_text"
-                android:textColor="@color/colorSecondaryText"
-                android:textSize="16sp" />
+            <ImageButton
+                android:id="@+id/zoomButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="3"
+                android:background="@color/transparent"
+                android:contentDescription="@string/zoomButton"/>
+
         </LinearLayout>
 
-    </ScrollView>
+    </RelativeLayout>
 
-</RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/dictionaryLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:minHeight="@dimen/dictionary_view_height"
+
+        android:background="@color/colorBackgroundWhite"
+        app:layout_behavior="io.github.bjxytw.wordlens.components.LockableBottomSheetBehavior"
+        app:behavior_peekHeight="@dimen/dictionary_view_height">
+
+        <RelativeLayout
+            android:id="@+id/dictionaryToolBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="2dp"
+            android:background="@color/colorPrimary">
+
+            <ImageButton
+                android:id="@+id/expandButton"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
+                android:layout_alignTop="@id/searchBarLayout"
+                android:background="@color/transparent"
+                android:contentDescription="@string/expandButton"
+                app:srcCompat="@drawable/ic_expand_24dp"/>
+
+            <RelativeLayout
+                android:id="@+id/searchBarLayout"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:layout_toEndOf="@id/expandButton"
+                android:descendantFocusability="beforeDescendants"
+                android:focusableInTouchMode="true"
+                android:background="@drawable/search_bar_background">
+
+                <io.github.bjxytw.wordlens.components.AutoRemoveCursorEditText
+                    android:id="@+id/dictionarySearchText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_toStartOf="@id/searchButton"
+                    android:layout_marginStart="6dp"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textSize="24sp"
+                    android:textColor="@color/colorPrimaryText"
+                    android:background="@color/transparent"
+                    tools:ignore="Autofill" />
+
+                <ImageButton
+                    android:id="@+id/searchButton"
+                    android:layout_width="40dp"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="4dp"
+                    android:background="@color/transparent"
+                    android:contentDescription="@string/searchButton"
+                    app:srcCompat="@drawable/ic_browser_24dp" />
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+        <ScrollView
+            android:id="@+id/dictionaryScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dictionary_scroll_view_height"
+            android:nestedScrollingEnabled="true"
+            android:layout_below="@id/dictionaryToolBarLayout">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+                    <ImageButton
+                        android:id="@+id/dictionaryBackButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="@color/transparent"
+                        android:contentDescription="@string/dictionaryBack"
+                        android:visibility="gone"
+                        app:srcCompat="@drawable/ic_arrow_back" />
+                    <ImageButton
+                        android:id="@+id/textToSpeechButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginStart="2dp"
+                        android:background="@color/transparent"
+                        android:contentDescription="@string/textToSpeech"
+                        android:visibility="gone"
+                        app:srcCompat="@drawable/ic_tts_24dp" />
+                    <TextView
+                        android:id="@+id/headText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:visibility="gone"
+                        android:textColor="@color/colorPrimaryText"
+                        android:textSize="28sp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/meanText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginTop="4dp"
+                    android:clickable="false"
+                    android:text="@string/tutorial_text"
+                    android:textColor="@color/colorSecondaryText"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+        </ScrollView>
+    </RelativeLayout>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

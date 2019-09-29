@@ -1,9 +1,8 @@
 package io.github.bjxytw.wordlens;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,9 +18,14 @@ import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,6 +36,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
@@ -46,6 +51,7 @@ import java.util.regex.Pattern;
 import io.github.bjxytw.wordlens.camera.CameraCursorGraphic;
 import io.github.bjxytw.wordlens.camera.CameraPreview;
 import io.github.bjxytw.wordlens.camera.CameraSource;
+import io.github.bjxytw.wordlens.components.LockableBottomSheetBehavior;
 import io.github.bjxytw.wordlens.data.DictionaryData;
 import io.github.bjxytw.wordlens.data.LinkTextData;
 import io.github.bjxytw.wordlens.db.DictionarySearch;
@@ -54,9 +60,10 @@ import io.github.bjxytw.wordlens.settings.SettingsFragment;
 
 public final class MainActivity extends AppCompatActivity
         implements TextRecognition.TextRecognitionListener,
-        CameraSource.AutoFocusFinishedListener, TextToSpeech.OnInitListener {
+        CameraSource.AutoFocusFinishedListener,
+        TextToSpeech.OnInitListener {
     private static final String TAG = "MainActivity";
-    private static final String REGEX_LINK = "([a-zA-Z]{2,}+)";
+    private static final String REGEX_DICTIONARY_LINK = "([a-zA-Z]{2,}+)";
     private FirebaseAnalytics analytics;
     private CameraSource camera;
     private CameraPreview preview;
@@ -64,29 +71,32 @@ public final class MainActivity extends AppCompatActivity
     private TextRecognition textRecognition;
     private DictionarySearch dictionary;
     private TextToSpeech textToSpeech;
+    private LockableBottomSheetBehavior bottomSheetBehavior;
     private ImageButton pauseButton;
     private ImageButton flashButton;
     private ImageButton zoomButton;
     private ImageButton dictionaryBackButton;
     private ImageButton ttsButton;
     private ImageButton searchButton;
-    private ImageButton copyButton;
-    private TextView resultTextView;
+    private ImageButton expandButton;
+    private EditText searchTextView;
     private TextView headTextView;
     private TextView meanTextView;
-    private ScrollView meanView;
+    private ScrollView dictionaryScrollView;
     private LinkedList<DictionaryData> linkHistory = new LinkedList<>();
     private String recognizedText;
     private String searchEngine;
     private Integer zoomRatio;
-    private boolean paused;
-    private boolean flashed;
-    private boolean zoomed;
+    private boolean dictionaryExpanded;
+    private boolean isCameraPaused;
+    private boolean isCameraFlashed;
+    private boolean isCameraZoomed;
     private boolean BrowserOpened;
     private boolean useCustomTabs;
     private boolean cursorVisible;
-    private boolean linkToPause;
+    private boolean linkToExpand;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,12 +110,16 @@ public final class MainActivity extends AppCompatActivity
         zoomButton = findViewById(R.id.zoomButton);
         dictionaryBackButton = findViewById(R.id.dictionaryBackButton);
         ttsButton = findViewById(R.id.textToSpeechButton);
-        resultTextView = findViewById(R.id.resultText);
+        searchTextView = findViewById(R.id.dictionarySearchText);
         headTextView = findViewById(R.id.headText);
         meanTextView = findViewById(R.id.meanText);
-        meanView = findViewById(R.id.meanView);
+        dictionaryScrollView = findViewById(R.id.dictionaryScrollView);
         searchButton = findViewById(R.id.searchButton);
-        copyButton = findViewById(R.id.copyButton);
+        expandButton = findViewById(R.id.expandButton);
+
+        View dictionaryView = findViewById(R.id.dictionaryLayout);
+        bottomSheetBehavior = (LockableBottomSheetBehavior)
+                LockableBottomSheetBehavior.from(dictionaryView);
 
         ButtonClick buttonListener = new ButtonClick();
 
@@ -115,30 +129,55 @@ public final class MainActivity extends AppCompatActivity
         dictionaryBackButton.setOnClickListener(buttonListener);
         ttsButton.setOnClickListener(buttonListener);
         searchButton.setOnClickListener(buttonListener);
-        copyButton.setOnClickListener(buttonListener);
+        expandButton.setOnClickListener(buttonListener);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu_main);
         toolbar.setOnMenuItemClickListener(new MenuItemClick());
 
+        searchTextView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (!dictionaryExpanded) expandDictionaryLayout(true);
+                searchTextView.requestFocus();
+                return false;
+            }
+        });
+
+        dictionaryScrollView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                cancelEdit();
+                return false;
+            }
+        });
+
+        meanTextView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                cancelEdit();
+                return false;
+            }
+        });
+
         textRecognition = new TextRecognition(cameraCursor, this);
-
         dictionary = new DictionarySearch(this);
-
         textToSpeech = new TextToSpeech(this, this);
 
         analytics = FirebaseAnalytics.getInstance(this);
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || PermissionUtil.isAllPermissionsGranted(this))
-            processAfterGranted();
+            processAfterGrantedPermission();
         else PermissionUtil.getPermissions(this);
     }
 
-    private void processAfterGranted() {
-        if (camera == null) camera = new CameraSource(textRecognition, this);
+    private void processAfterGrantedPermission() {
+        if (camera == null) {
+            camera = new CameraSource(textRecognition, this);
+        }
     }
 
-    private void startCameraSource() {
+    private void startCamera() {
         if (camera == null) return;
         try {
             preview.cameraStart(camera, cameraCursor);
@@ -146,7 +185,58 @@ public final class MainActivity extends AppCompatActivity
             Log.e(TAG, "failed to start camera source.", e);
             camera.release();
             camera = null;
+            return;
         }
+
+        pauseButton.setImageResource(R.drawable.ic_pause);
+        isCameraPaused = false;
+    }
+
+    private void stopCamera(boolean retainFlag) {
+        cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
+        cameraCursor.invalidate();
+
+        if (camera == null) return;
+
+        preview.cameraStop();
+        pauseButton.setImageResource(R.drawable.ic_play);
+        if (!retainFlag) isCameraPaused = true;
+    }
+
+    private void switchCameraFlash(boolean flash, boolean operate) {
+        if (operate && camera != null) {
+            if (flash) {
+                if (!camera.cameraFlash(true)) {
+                    Toast.makeText(MainActivity.this,
+                            getString(R.string.flash_not_supported),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } else {
+                camera.cameraFlash(false);
+            }
+        }
+
+        flashButton.setImageResource(flash ? R.drawable.ic_highlight_on : R.drawable.ic_highlight_off);
+        isCameraFlashed = flash;
+    }
+
+    private void switchCameraZoom(boolean zoom, boolean operate) {
+        if (operate && camera != null) {
+            if (zoom) {
+                if (!camera.cameraZoom(true)) {
+                    Toast.makeText(MainActivity.this,
+                            getString(R.string.zoom_not_supported),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } else {
+                camera.cameraZoom(false);
+            }
+        }
+
+        zoomButton.setImageResource(zoom ? R.drawable.ic_zoomed_24dp : R.drawable.ic_zoom_default_24dp);
+        isCameraZoomed = zoom;
     }
 
     private void loadPreferences() {
@@ -156,11 +246,11 @@ public final class MainActivity extends AppCompatActivity
         String zoomRatioValue = preferences.getString(SettingsFragment.KEY_ZOOM_RATIO, "200");
         zoomRatio = zoomRatioValue == null ? null : Integer.valueOf(zoomRatioValue);
         cursorVisible = preferences.getBoolean(SettingsFragment.KEY_CURSOR_VISIBLE, false);
-        linkToPause = preferences.getBoolean(SettingsFragment.KEY_LINK_PAUSE, false);
+        linkToExpand = preferences.getBoolean(SettingsFragment.KEY_LINK_PAUSE, false);
     }
 
     private void setDictionaryText(DictionaryData data) {
-        Matcher matcher = Pattern.compile(REGEX_LINK).matcher(data.meanText());
+        Matcher matcher = Pattern.compile(REGEX_DICTIONARY_LINK).matcher(data.meanText());
         List<LinkTextData> linkDataList = new ArrayList<>();
         while (matcher.find()) {
             String findText =  matcher.group();
@@ -180,10 +270,8 @@ public final class MainActivity extends AppCompatActivity
                             dictionaryBackButton.setVisibility(View.VISIBLE);
                         linkHistory.add(linkDictionaryData);
                         setDictionaryText(linkDictionaryData);
-                        if (linkToPause) {
-                            cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
-                            preview.cameraStop();
-                            setPause(true);
+                        if (linkToExpand) {
+                            expandDictionaryLayout(true);
                         }
                     }
                 }, linkData.getStart(), linkData.getEnd(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -193,12 +281,12 @@ public final class MainActivity extends AppCompatActivity
         headTextView.setText(data.wordText());
         meanTextView.setText(spanMeanText);
         meanTextView.setMovementMethod(LinkMovementMethod.getInstance());
-        meanView.scrollTo(0, 0);
+        dictionaryScrollView.scrollTo(0, 0);
     }
 
     @Override
     public void onRecognitionResult(String resultText) {
-        if (paused) return;
+        if (isCameraPaused) return;
 
         if (resultText == null) {
             Toast.makeText(this, getString(R.string.detect_failed), Toast.LENGTH_LONG).show();
@@ -211,7 +299,7 @@ public final class MainActivity extends AppCompatActivity
         String text = DictionarySearch.removeBothEndSymbol(resultText);
         if (text != null && dictionary != null && !text.equals(recognizedText)) {
             recognizedText = text;
-            resultTextView.setText(text);
+            searchTextView.setText(text);
             DictionaryData data = dictionary.search(text);
             if (data != null && (linkHistory.size() == 0 ||
                     !data.wordText().equals(linkHistory.getFirst().wordText()))) {
@@ -232,7 +320,7 @@ public final class MainActivity extends AppCompatActivity
 
         if (PermissionUtil.isAllPermissionsGranted(this)) {
             Log.i(TAG, "Permission granted.");
-            processAfterGranted();
+            processAfterGrantedPermission();
         } else {
             Log.i(TAG, "Permission denied.");
             Toast.makeText(this,
@@ -258,14 +346,13 @@ public final class MainActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        setPause(false);
-        setFlash(flashed);
-        setZoom(zoomed);
+        switchCameraFlash(isCameraFlashed, false);
+        switchCameraZoom(isCameraZoomed, false);
         loadPreferences();
         if (camera != null) camera.setZoomRatio(zoomRatio);
         cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
         BrowserOpened = false;
-        startCameraSource();
+        if (!dictionaryExpanded) startCamera();
     }
 
     @Override
@@ -285,19 +372,20 @@ public final class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
-    private void setPause(boolean pause) {
-        pauseButton.setImageResource(pause ? R.drawable.ic_play : R.drawable.ic_pause);
-        paused = pause;
-    }
+    private void expandDictionaryLayout(boolean expand) {
+        if (camera != null) {
+            if (expand && !isCameraPaused) stopCamera(true);
+            else if (!expand && !isCameraPaused) startCamera();
+        }
 
-    private void setFlash(boolean flash) {
-        flashButton.setImageResource(flash ? R.drawable.ic_highlight_on : R.drawable.ic_highlight_off);
-        flashed = flash;
-    }
+        if (!expand) cancelEdit();
 
-    private void setZoom(boolean zoom) {
-        zoomButton.setImageResource(zoom ? R.drawable.ic_zoomed_24dp : R.drawable.ic_zoom_default_24dp);
-        zoomed = zoom;
+        dictionaryScrollView.getLayoutParams().height =
+                expand ? RelativeLayout.LayoutParams.MATCH_PARENT : (int) getResources().getDimension(R.dimen.dictionary_scroll_view_height);
+        dictionaryScrollView.requestLayout();
+        bottomSheetBehavior.setState(expand ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_COLLAPSED);
+        expandButton.setImageResource(expand ? R.drawable.ic_fold_24dp  : R.drawable.ic_expand_24dp);
+        dictionaryExpanded = expand;
     }
 
     private void searchOnWeb() {
@@ -312,48 +400,6 @@ public final class MainActivity extends AppCompatActivity
                 break;
             }
         }
-    }
-
-    private void openBrowser(String url, boolean useCustomTabs) {
-        if (useCustomTabs) {
-            try {
-                CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .setToolbarColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                        .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                        .build();
-                tabsIntent.launchUrl(this, Uri.parse(url));
-                BrowserOpened = true;
-            } catch (ActivityNotFoundException e) {
-                Log.e(TAG, e.toString());
-                Toast.makeText(this,
-                        getString(R.string.custom_tabs_cannot_open), Toast.LENGTH_LONG).show();
-            }
-        } else {
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(intent);
-            } catch (ActivityNotFoundException e) {
-                Log.e(TAG, e.toString());
-                Toast.makeText(this,
-                        getString(R.string.browser_cannot_open), Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private void copyToClipboard() {
-        ClipboardManager clipboardManager =
-                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        if (clipboardManager == null) return;
-
-        clipboardManager.setPrimaryClip(
-                ClipData.newPlainText("recognizedText", recognizedText));
-        makeSnackBar(getString(R.string.copied_message));
-    }
-
-    private void makeSnackBar(String message) {
-        View view = findViewById(android.R.id.content);
-        if (view != null) Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
     }
 
     @Override
@@ -372,44 +418,34 @@ public final class MainActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK) {
+            if (dictionaryExpanded) {
+                expandDictionaryLayout(false);
+                return true;
+            }
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+
     private class ButtonClick implements View.OnClickListener {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.pauseButton:
-                    if (paused) {
-                        startCameraSource();
-                        setPause(false);
-                    } else {
-                        cameraCursor.setAreaGraphics(cursorVisible, CameraCursorGraphic.AREA_DEFAULT_COLOR);
-                        preview.cameraStop();
-                        setPause(true);
-                    }
+                    if (isCameraPaused) startCamera();
+                    else stopCamera(false);
                     break;
                 case R.id.flashButton:
-                    if (camera != null && !paused) {
-                        if (!flashed) {
-                            if (camera.cameraFlash(true)) setFlash(true);
-                            else Toast.makeText(MainActivity.this,
-                                    getString(R.string.flash_not_supported),
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            camera.cameraFlash(false);
-                            setFlash(false);
-                        }
+                    if (!isCameraPaused) {
+                        switchCameraFlash(!isCameraFlashed, true);
                     }
                     break;
                 case R.id.zoomButton:
-                    if (camera != null && !paused) {
-                        if (!zoomed) {
-                            if (camera.cameraZoom(true)) setZoom(true);
-                            else Toast.makeText(MainActivity.this,
-                                    getString(R.string.zoom_not_supported),
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            camera.cameraZoom(false);
-                            setZoom(false);
-                        }
+                    if (!isCameraPaused) {
+                        switchCameraZoom(!isCameraZoomed, true);
                     }
                     break;
                 case R.id.dictionaryBackButton:
@@ -436,14 +472,8 @@ public final class MainActivity extends AppCompatActivity
                     if (recognizedText != null) searchOnWeb();
                     else makeSnackBar(getString(R.string.not_detected));
                     break;
-                case R.id.copyButton:
-                    copyButton.setEnabled(false);
-                    new Handler().postDelayed(new Runnable() {
-                        public void run() { copyButton.setEnabled(true);
-                        }
-                    }, 2000L);
-                    if (recognizedText != null) copyToClipboard();
-                    else makeSnackBar(getString(R.string.not_detected));
+                case R.id.expandButton:
+                    expandDictionaryLayout(!dictionaryExpanded);
             }
         }
     }
@@ -507,4 +537,43 @@ public final class MainActivity extends AppCompatActivity
             return false;
         }
     }
+
+    private void cancelEdit() {
+        ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
+                .hideSoftInputFromWindow(dictionaryScrollView.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        searchTextView.clearFocus();
+    }
+
+    private void openBrowser(String url, boolean useCustomTabs) {
+        if (useCustomTabs) {
+            try {
+                CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setToolbarColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                        .setStartAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                        .build();
+                tabsIntent.launchUrl(this, Uri.parse(url));
+                BrowserOpened = true;
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, e.toString());
+                Toast.makeText(this,
+                        getString(R.string.custom_tabs_cannot_open), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, e.toString());
+                Toast.makeText(this,
+                        getString(R.string.browser_cannot_open), Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void makeSnackBar(String message) {
+        View view = findViewById(android.R.id.content);
+        if (view != null) Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
+    }
+
 }
