@@ -9,6 +9,8 @@ import android.preference.PreferenceManager;
 
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity;
 
+import java.util.Objects;
+
 import io.github.bjxytw.wordlens.R;
 
 public class SettingsFragment extends PreferenceFragment {
@@ -16,7 +18,7 @@ public class SettingsFragment extends PreferenceFragment {
     public static final String KEY_CUSTOM_TABS = "custom_tabs_switch";
     public static final String KEY_ZOOM_RATIO = "zoom_ratio_list";
     public static final String KEY_CURSOR_VISIBLE = "link_cursor_visible_switch";
-    public static final String KEY_LINK_PAUSE = "link_pause_switch";
+    public static final String KEY_LINK_EXPAND = "link_expand_switch";
     public static final String KEY_LICENSE_MENU = "license";
     public static final String KEY_TTS_SETTINGS = "tts";
     @Override
@@ -65,9 +67,9 @@ public class SettingsFragment extends PreferenceFragment {
     private void bindPreferenceSummary(Preference preference) {
         PreferenceChangeListener changeListener = new PreferenceChangeListener();
         preference.setOnPreferenceChangeListener(changeListener);
-        changeListener.onPreferenceChange(preference, PreferenceManager
+        changeListener.onPreferenceChange(preference, Objects.requireNonNull(PreferenceManager
                 .getDefaultSharedPreferences(preference.getContext())
-                .getString(preference.getKey(), ""));
+                .getString(preference.getKey(), "")));
     }
 }
 
