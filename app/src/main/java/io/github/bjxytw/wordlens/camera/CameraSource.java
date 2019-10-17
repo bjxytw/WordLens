@@ -44,12 +44,11 @@ public class CameraSource {
     private TextRecognition textRecognition;
     private Camera camera;
     private Size size;
-    private List<Camera.Area> focusArea;
-    private  AutoFocusFinishedListener autoFocusListener;
+    private AutoFocusFinishedListener autoFocusListener;
     private Integer requestedZoomRatio;
     private int zoomStep;
 
-    private boolean supportedAutoFocus = false;
+    private boolean supportedFocus = false;
     private boolean supportedFlash = false;
     private boolean supportedZoom = false;
     private boolean flashed;
@@ -136,13 +135,15 @@ public class CameraSource {
         camera.setDisplayOrientation(ROTATION_DEGREE);
 
         List<String> focusModes = parameters.getSupportedFocusModes();
-        if (focusModes != null && focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)
-                && parameters.getMaxNumFocusAreas() > 0) {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-            supportedAutoFocus = true;
-        } else {
-            Log.i(TAG, "Camera auto focus is not supported on this device.");
-        }
+        if (focusModes != null) {
+            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)
+                    && parameters.getMaxNumFocusAreas() > 0) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+                supportedFocus = true;
+            } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            } else Log.i(TAG, "Camera auto focus is not supported on this device.");
+        } else Log.i(TAG, "Camera auto focus is not supported on this device.");
 
         List<String> flashModes = parameters.getSupportedFlashModes();
         if (flashModes != null && flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
@@ -172,15 +173,10 @@ public class CameraSource {
     }
 
     synchronized boolean cameraFocus() {
-        if (camera == null || !supportedAutoFocus || focusArea == null) return false;
+        if (camera == null || !supportedFocus) return false;
 
+        camera.cancelAutoFocus();
         try {
-            Camera.Parameters parameters = camera.getParameters();
-            if (parameters == null) return false;
-
-            parameters.setFocusAreas(focusArea);
-            camera.setParameters(parameters);
-            camera.cancelAutoFocus();
             camera.autoFocus(new Camera.AutoFocusCallback() {
                 @Override
                 public void onAutoFocus(boolean success, Camera camera) {
@@ -222,14 +218,20 @@ public class CameraSource {
     }
 
     void setCameraFocusArea(Rect rect) {
-        if (supportedAutoFocus && rect != null) {
-            focusArea = new ArrayList<>();
-            focusArea.add(new Camera.Area(
-                    new Rect(calculateFocusPoint(rect.left, size.getWidth()),
-                            calculateFocusPoint(rect.top, size.getHeight()),
-                            calculateFocusPoint(rect.right, size.getWidth()),
-                            calculateFocusPoint(rect.bottom, size.getHeight())), 1));
-        }
+        if (!supportedFocus || rect == null) return;
+
+        List<Camera.Area> focusArea = new ArrayList<>();
+        focusArea.add(new Camera.Area(
+                new Rect(calculateFocusPoint(rect.left, size.getWidth()),
+                        calculateFocusPoint(rect.top, size.getHeight()),
+                        calculateFocusPoint(rect.right, size.getWidth()),
+                        calculateFocusPoint(rect.bottom, size.getHeight())), 1));
+
+        Camera.Parameters parameters = camera.getParameters();
+        if (parameters == null) return;
+
+        parameters.setFocusAreas(focusArea);
+        camera.setParameters(parameters);
     }
 
     public void setZoomRatio(int ratio) {

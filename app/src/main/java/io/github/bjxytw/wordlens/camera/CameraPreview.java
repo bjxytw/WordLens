@@ -88,8 +88,11 @@ public class CameraPreview extends SurfaceView {
 
     private void cameraFocus() {
         if (camera == null) return;
-        if (!camera.cameraFocus() || cursor == null) return;
-        cursor.setAreaGraphics(true, CameraCursorGraphic.AREA_FOCUSING_COLOR);
+        if (!camera.cameraFocus()) return;
+
+        if (cursor != null) {
+            cursor.setAreaGraphics(true, CameraCursorGraphic.AREA_FOCUSING_COLOR);
+        }
     }
 
     private class SurfaceCallback implements SurfaceHolder.Callback {

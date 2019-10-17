@@ -7,7 +7,7 @@
     <string name="flash_not_supported">フラッシュ機能に対応していない機種です。</string>
     <string name="zoom_not_supported">ズーム機能に対応していない機種です。</string>
     <string name="not_detected">検索する単語がありません。</string>
-    <string name="detect_failed">テキストの認識に失敗しました。\nGoogle Play 開発者サービスの更新又はキャッシュの削除をお試し下さい。</string>
+    <string name="detection_failed">テキストの認識に失敗しました。\nGoogle Play 開発者サービスの更新又はキャッシュの削除を試した上で、しばらく時間を空けてからお試し下さい。</string>
     <string name="browser_cannot_open">ブラウザがインストールされていません。</string>
     <string name="custom_tabs_cannot_open">Chrome Custom Tabsを開けません。\nChromeがインストールされているか確認してください。</string>
     <string name="tts_not_supported">テキスト読み上げ機能はサポートされていません。</string>
@@ -18,5 +18,5 @@
     <string name="share_app">このアプリをシェア</string>
     <string name="feedback_subject">「英単語レンズ」フィードバック</string>
     <string name="mail_chooser_title">メールを送信</string>
-    <string name="version_name">1.4.0</string>
+    <string name="version_name">1.4.1</string>
 </resources>

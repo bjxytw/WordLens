@@ -409,7 +409,7 @@ public final class MainActivity extends AppCompatActivity
         if (isCameraPaused || dictionaryExpanded) return;
 
         if (resultText == null) {
-            Toast.makeText(this, getString(R.string.detect_failed), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.detection_failed), Toast.LENGTH_LONG).show();
             Bundle params = new Bundle();
             params.putInt("failed", 0);
             analytics.logEvent("text_detection_failed", params);
